@@ -17,70 +17,81 @@ public static class MemoryTools
     };
 
     [McpServerTool(Name = "remember")]
-    [Description("Save information to persistent memory for use across conversations. Use when the user asks to remember preferences, facts, or context. Write content as a concise third-person statement.")]
+    [Description("Store a memory. If the key already exists, the value is updated.")]
     public static string Remember(
         MemoryStore store,
-        [Description("Concise factual statement to remember, written in third person (e.g., 'User prefers dark theme.')")]
-        string? content = null,
-        [Description("Short key to identify this memory (e.g., 'preferred_theme'). Auto-generated if omitted.")]
-        string? key = null)
+        [Description("Short identifier for this memory (e.g., 'preferred_language')")]
+        string? key = null,
+        [Description("The content to remember")]
+        string? value = null)
     {
-        if (string.IsNullOrWhiteSpace(content))
-            return JsonSerializer.Serialize(new { success = false, error = "Parameter 'content' is required." }, JsonOptions);
+        if (string.IsNullOrWhiteSpace(key))
+            return JsonSerializer.Serialize(new { error = "Parameter 'key' is required." }, JsonOptions);
+        if (string.IsNullOrWhiteSpace(value))
+            return JsonSerializer.Serialize(new { error = "Parameter 'value' is required." }, JsonOptions);
 
-        key ??= $"mem_{Guid.NewGuid():N}"[..16];
+        var (created, updated) = store.Upsert(key, value);
 
-        var (success, warning) = store.Add(key, content);
-
-        if (!success)
-            return JsonSerializer.Serialize(new { success = false, error = "Failed to save memory." }, JsonOptions);
-
-        return JsonSerializer.Serialize(new
-        {
-            success = true,
-            key,
-            message = $"Remembered: {content}",
-            warning,
-        }, JsonOptions);
+        return JsonSerializer.Serialize(new { key, created, updated }, JsonOptions);
     }
 
     [McpServerTool(Name = "forget")]
-    [Description("Remove information from persistent memory. Use when the user asks to forget or delete previously remembered information.")]
+    [Description("Delete a memory by key, or by query to forget multiple matches.")]
     public static string Forget(
         MemoryStore store,
-        [Description("Search term to find the memory to remove (matched by substring in key or value)")]
+        [Description("Exact key to delete")]
+        string? key = null,
+        [Description("Keyword query — deletes all matching memories")]
         string? query = null)
     {
-        if (string.IsNullOrWhiteSpace(query))
-            return JsonSerializer.Serialize(new { success = false, error = "Parameter 'query' is required." }, JsonOptions);
+        if (string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(query))
+            return JsonSerializer.Serialize(new { error = "Either 'key' or 'query' is required." }, JsonOptions);
 
-        var removed = store.Remove(query);
-
-        return JsonSerializer.Serialize(new
+        if (!string.IsNullOrWhiteSpace(key))
         {
-            success = removed,
-            message = removed
-                ? $"Forgot: {query}"
-                : $"No matching memory found for: {query}",
-        }, JsonOptions);
+            var deleted = store.DeleteByKey(key);
+            return JsonSerializer.Serialize(new
+            {
+                deleted = deleted ? 1 : 0,
+                keys = deleted ? new[] { key } : Array.Empty<string>(),
+            }, JsonOptions);
+        }
+        else
+        {
+            var deletedKeys = store.DeleteByQuery(query!);
+            return JsonSerializer.Serialize(new
+            {
+                deleted = deletedKeys.Count,
+                keys = deletedKeys,
+            }, JsonOptions);
+        }
     }
 
     [McpServerTool(Name = "list_memories")]
-    [Description("List all saved memory entries. Use to check what the user has asked to remember.")]
-    public static string ListMemories(MemoryStore store)
+    [Description("Search and list stored memories. Without a query, returns recent memories. With a query, performs keyword search across all memories.")]
+    public static string ListMemories(
+        MemoryStore store,
+        [Description("Keyword search (FTS5). Null returns recent memories.")]
+        string? query = null,
+        [Description("Max results to return (default: 20, max: 100)")]
+        int? limit = null,
+        [Description("Offset for pagination (default: 0)")]
+        int? offset = null)
     {
-        var entries = store.GetAll();
+        var (entries, total) = store.List(query, limit ?? 20, offset ?? 0);
 
         return JsonSerializer.Serialize(new
         {
-            total_count = entries.Count,
-            entries = entries.Select(e => new
+            memories = entries.Select(e => new
             {
                 key = e.Key,
                 value = e.Value,
                 created_at = e.CreatedAt,
                 updated_at = e.UpdatedAt,
             }),
+            total,
+            returned = entries.Count,
+            has_more = (offset ?? 0) + entries.Count < total,
         }, JsonOptions);
     }
 }

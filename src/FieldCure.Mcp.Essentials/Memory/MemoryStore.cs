@@ -3,9 +3,9 @@ using Microsoft.Data.Sqlite;
 namespace FieldCure.Mcp.Essentials.Memory;
 
 /// <summary>
-/// Persistent key-value memory store backed by SQLite (WAL mode).
+/// Persistent key-value memory store backed by SQLite with FTS5 full-text search.
 /// Default path: %LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db.
-/// Override via CLI argument (--memory-path) or ESSENTIALS_MEMORY_PATH env var.
+/// Override via --memory-path CLI arg or ESSENTIALS_MEMORY_PATH env var.
 /// </summary>
 public sealed class MemoryStore : IDisposable
 {
@@ -24,28 +24,20 @@ public sealed class MemoryStore : IDisposable
         Initialize();
     }
 
-    /// <summary>
-    /// Returns the default memory database path.
-    /// </summary>
     public static string GetDefaultPath()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         return Path.Combine(localAppData, "FieldCure", "Mcp.Essentials", "memory.db");
     }
 
-    /// <summary>
-    /// Resolves the effective memory path: CLI arg > env var > default.
-    /// </summary>
     public static string ResolvePath(string[] args)
     {
-        // CLI: --memory-path <path>
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] is "--memory-path" or "-m")
                 return Path.GetFullPath(args[i + 1]);
         }
 
-        // Environment variable
         var envPath = Environment.GetEnvironmentVariable("ESSENTIALS_MEMORY_PATH");
         if (!string.IsNullOrWhiteSpace(envPath))
             return Path.GetFullPath(envPath);
@@ -53,16 +45,21 @@ public sealed class MemoryStore : IDisposable
         return GetDefaultPath();
     }
 
-    public (bool Success, string? Warning) Add(string key, string value)
+    /// <summary>
+    /// Upserts a memory entry. Returns (created, updated).
+    /// </summary>
+    public (bool Created, bool Updated) Upsert(string key, string value)
     {
-        if (string.IsNullOrWhiteSpace(key))
-            return (false, null);
-
         using var conn = Open();
-        using var cmd = conn.CreateCommand();
-
         var now = DateTimeOffset.UtcNow.ToString("o");
 
+        // Check if exists
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM Memories WHERE Key = @key";
+        checkCmd.Parameters.AddWithValue("@key", key);
+        var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+
+        using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             INSERT INTO Memories (Key, Value, CreatedAt, UpdatedAt)
             VALUES (@key, @value, @now, @now)
@@ -73,48 +70,150 @@ public sealed class MemoryStore : IDisposable
         cmd.Parameters.AddWithValue("@now", now);
         cmd.ExecuteNonQuery();
 
-        return (true, null);
+        // Sync FTS index
+        if (exists)
+        {
+            using var ftsCmd = conn.CreateCommand();
+            ftsCmd.CommandText = """
+                DELETE FROM MemoriesFts WHERE rowid = (SELECT rowid FROM Memories WHERE Key = @key);
+                INSERT INTO MemoriesFts(rowid, Key, Value)
+                    SELECT rowid, Key, Value FROM Memories WHERE Key = @key;
+                """;
+            ftsCmd.Parameters.AddWithValue("@key", key);
+            ftsCmd.ExecuteNonQuery();
+        }
+        else
+        {
+            using var ftsCmd = conn.CreateCommand();
+            ftsCmd.CommandText = """
+                INSERT INTO MemoriesFts(rowid, Key, Value)
+                    SELECT rowid, Key, Value FROM Memories WHERE Key = @key;
+                """;
+            ftsCmd.Parameters.AddWithValue("@key", key);
+            ftsCmd.ExecuteNonQuery();
+        }
+
+        return (Created: !exists, Updated: exists);
     }
 
-    public bool Remove(string query)
+    /// <summary>
+    /// Deletes a memory by exact key. Returns true if deleted.
+    /// </summary>
+    public bool DeleteByKey(string key)
     {
-        if (string.IsNullOrWhiteSpace(query))
-            return false;
-
         using var conn = Open();
+
+        // Delete from FTS first
+        using var ftsCmd = conn.CreateCommand();
+        ftsCmd.CommandText = "DELETE FROM MemoriesFts WHERE rowid = (SELECT rowid FROM Memories WHERE Key = @key)";
+        ftsCmd.Parameters.AddWithValue("@key", key);
+        ftsCmd.ExecuteNonQuery();
+
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "DELETE FROM Memories WHERE Key LIKE @q OR Value LIKE @q";
-        cmd.Parameters.AddWithValue("@q", $"%{query}%");
+        cmd.CommandText = "DELETE FROM Memories WHERE Key = @key";
+        cmd.Parameters.AddWithValue("@key", key);
         return cmd.ExecuteNonQuery() > 0;
     }
 
-    public List<MemoryEntry> GetAll()
+    /// <summary>
+    /// Deletes memories matching a FTS5 query. Returns deleted keys.
+    /// </summary>
+    public List<string> DeleteByQuery(string query)
     {
         using var conn = Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Key, Value, CreatedAt, UpdatedAt FROM Memories ORDER BY CreatedAt";
 
-        var entries = new List<MemoryEntry>();
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
+        // Find matching keys via FTS
+        using var findCmd = conn.CreateCommand();
+        findCmd.CommandText = """
+            SELECT m.Key FROM Memories m
+            JOIN MemoriesFts f ON m.rowid = f.rowid
+            WHERE MemoriesFts MATCH @query
+            """;
+        findCmd.Parameters.AddWithValue("@query", EscapeFtsQuery(query));
+
+        var keys = new List<string>();
+        using (var reader = findCmd.ExecuteReader())
         {
-            entries.Add(new MemoryEntry
-            {
-                Key = reader.GetString(0),
-                Value = reader.GetString(1),
-                CreatedAt = reader.GetString(2),
-                UpdatedAt = reader.GetString(3),
-            });
+            while (reader.Read())
+                keys.Add(reader.GetString(0));
         }
-        return entries;
+
+        if (keys.Count == 0)
+            return keys;
+
+        // Delete from FTS
+        foreach (var key in keys)
+        {
+            using var ftsCmd = conn.CreateCommand();
+            ftsCmd.CommandText = "DELETE FROM MemoriesFts WHERE rowid = (SELECT rowid FROM Memories WHERE Key = @key)";
+            ftsCmd.Parameters.AddWithValue("@key", key);
+            ftsCmd.ExecuteNonQuery();
+        }
+
+        // Delete from main table
+        foreach (var key in keys)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "DELETE FROM Memories WHERE Key = @key";
+            cmd.Parameters.AddWithValue("@key", key);
+            cmd.ExecuteNonQuery();
+        }
+
+        return keys;
     }
 
-    public int Count()
+    /// <summary>
+    /// Lists memories. If query is null, returns recent entries. If query is set, performs FTS5 search.
+    /// </summary>
+    public (List<MemoryEntry> Entries, int Total) List(string? query = null, int limit = 20, int offset = 0)
     {
+        limit = Math.Clamp(limit, 1, 100);
+
         using var conn = Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM Memories";
-        return Convert.ToInt32(cmd.ExecuteScalar());
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            // Recent entries
+            using var countCmd = conn.CreateCommand();
+            countCmd.CommandText = "SELECT COUNT(*) FROM Memories";
+            var total = Convert.ToInt32(countCmd.ExecuteScalar());
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Key, Value, CreatedAt, UpdatedAt FROM Memories ORDER BY UpdatedAt DESC LIMIT @limit OFFSET @offset";
+            cmd.Parameters.AddWithValue("@limit", limit);
+            cmd.Parameters.AddWithValue("@offset", offset);
+
+            return (ReadEntries(cmd), total);
+        }
+        else
+        {
+            // FTS5 search
+            var ftsQuery = EscapeFtsQuery(query);
+
+            using var countCmd = conn.CreateCommand();
+            countCmd.CommandText = """
+                SELECT COUNT(*) FROM Memories m
+                JOIN MemoriesFts f ON m.rowid = f.rowid
+                WHERE MemoriesFts MATCH @query
+                """;
+            countCmd.Parameters.AddWithValue("@query", ftsQuery);
+            var total = Convert.ToInt32(countCmd.ExecuteScalar());
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT m.Key, m.Value, m.CreatedAt, m.UpdatedAt
+                FROM Memories m
+                JOIN MemoriesFts f ON m.rowid = f.rowid
+                WHERE MemoriesFts MATCH @query
+                ORDER BY rank
+                LIMIT @limit OFFSET @offset
+                """;
+            cmd.Parameters.AddWithValue("@query", ftsQuery);
+            cmd.Parameters.AddWithValue("@limit", limit);
+            cmd.Parameters.AddWithValue("@offset", offset);
+
+            return (ReadEntries(cmd), total);
+        }
     }
 
     public void Dispose() { }
@@ -135,26 +234,63 @@ public sealed class MemoryStore : IDisposable
                 CreatedAt TEXT NOT NULL,
                 UpdatedAt TEXT NOT NULL
             );
+
+            CREATE VIRTUAL TABLE IF NOT EXISTS MemoriesFts USING fts5(
+                Key, Value, content=Memories, content_rowid=rowid
+            );
             """;
         cmd.ExecuteNonQuery();
+
+        // Rebuild FTS index if empty but Memories has data (migration)
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = """
+            SELECT (SELECT COUNT(*) FROM Memories) - (SELECT COUNT(*) FROM MemoriesFts)
+            """;
+        var diff = Convert.ToInt32(checkCmd.ExecuteScalar());
+        if (diff > 0)
+        {
+            using var rebuildCmd = conn.CreateCommand();
+            rebuildCmd.CommandText = "INSERT INTO MemoriesFts(MemoriesFts) VALUES('rebuild')";
+            rebuildCmd.ExecuteNonQuery();
+        }
     }
 
     private SqliteConnection Open()
     {
         var conn = new SqliteConnection(_connectionString);
         conn.Open();
-        using var pragma = conn.CreateCommand();
-        pragma.CommandText = "PRAGMA foreign_keys = ON;";
-        pragma.ExecuteNonQuery();
         return conn;
+    }
+
+    private static List<MemoryEntry> ReadEntries(SqliteCommand cmd)
+    {
+        var entries = new List<MemoryEntry>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            entries.Add(new MemoryEntry
+            {
+                Key = reader.GetString(0),
+                Value = reader.GetString(1),
+                CreatedAt = reader.GetString(2),
+                UpdatedAt = reader.GetString(3),
+            });
+        }
+        return entries;
+    }
+
+    /// <summary>
+    /// Escapes a user query for FTS5. Wraps each token in double quotes to prevent syntax errors.
+    /// </summary>
+    private static string EscapeFtsQuery(string query)
+    {
+        var tokens = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return string.Join(" ", tokens.Select(t => $"\"{t.Replace("\"", "\"\"")}\""));
     }
 
     #endregion
 }
 
-/// <summary>
-/// A single memory entry.
-/// </summary>
 public sealed class MemoryEntry
 {
     public required string Key { get; init; }
