@@ -1,5 +1,13 @@
 ﻿# Release Notes
 
+## v0.4.0
+
+- **FTS5 trigram tokenizer** — partial matching for CJK/mixed text (e.g., "1970" matches "1970년생")
+- **LIKE fallback** — automatic fallback when FTS5 query fails or tokens are too short
+- **Redesigned memory API** — `remember(key, value)` with upsert, `forget(key?, query?)` with bulk delete, `list_memories(query?, limit?, offset?)` with pagination
+- **MemoryPage search** — AutoSuggestBox for FTS5 keyword search in Settings
+- **Connecting state** — ProgressRing shown while Essentials server starts
+
 ## v0.3.0
 
 - **Persistent memory** — 3 new tools (`remember`, `forget`, `list_memories`) backed by SQLite with FTS5 full-text search
