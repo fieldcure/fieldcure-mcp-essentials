@@ -122,18 +122,27 @@ public sealed class MemoryStore : IDisposable
     {
         using var conn = Open();
 
-        // Find matching keys via FTS
-        using var findCmd = conn.CreateCommand();
-        findCmd.CommandText = """
-            SELECT m.Key FROM Memories m
-            JOIN MemoriesFts f ON m.rowid = f.rowid
-            WHERE MemoriesFts MATCH @query
-            """;
-        findCmd.Parameters.AddWithValue("@query", EscapeFtsQuery(query));
-
+        // Find matching keys via FTS, fall back to LIKE
         var keys = new List<string>();
-        using (var reader = findCmd.ExecuteReader())
+        try
         {
+            using var findCmd = conn.CreateCommand();
+            findCmd.CommandText = """
+                SELECT m.Key FROM Memories m
+                JOIN MemoriesFts f ON m.rowid = f.rowid
+                WHERE MemoriesFts MATCH @query
+                """;
+            findCmd.Parameters.AddWithValue("@query", EscapeFtsQuery(query));
+            using var reader = findCmd.ExecuteReader();
+            while (reader.Read())
+                keys.Add(reader.GetString(0));
+        }
+        catch
+        {
+            using var likeCmd = conn.CreateCommand();
+            likeCmd.CommandText = "SELECT Key FROM Memories WHERE Key LIKE @q OR Value LIKE @q";
+            likeCmd.Parameters.AddWithValue("@q", $"%{query}%");
+            using var reader = likeCmd.ExecuteReader();
             while (reader.Read())
                 keys.Add(reader.GetString(0));
         }
@@ -187,32 +196,61 @@ public sealed class MemoryStore : IDisposable
         }
         else
         {
-            // FTS5 search
-            var ftsQuery = EscapeFtsQuery(query);
+            // Try FTS5 search first, fall back to LIKE if FTS fails or query too short
+            try
+            {
+                var ftsQuery = EscapeFtsQuery(query);
+                if (string.IsNullOrEmpty(ftsQuery))
+                    throw new InvalidOperationException("All tokens too short for trigram");
 
-            using var countCmd = conn.CreateCommand();
-            countCmd.CommandText = """
-                SELECT COUNT(*) FROM Memories m
-                JOIN MemoriesFts f ON m.rowid = f.rowid
-                WHERE MemoriesFts MATCH @query
-                """;
-            countCmd.Parameters.AddWithValue("@query", ftsQuery);
-            var total = Convert.ToInt32(countCmd.ExecuteScalar());
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = """
-                SELECT m.Key, m.Value, m.CreatedAt, m.UpdatedAt
-                FROM Memories m
-                JOIN MemoriesFts f ON m.rowid = f.rowid
-                WHERE MemoriesFts MATCH @query
-                ORDER BY rank
-                LIMIT @limit OFFSET @offset
-                """;
-            cmd.Parameters.AddWithValue("@query", ftsQuery);
-            cmd.Parameters.AddWithValue("@limit", limit);
-            cmd.Parameters.AddWithValue("@offset", offset);
+                using var countCmd = conn.CreateCommand();
+                countCmd.CommandText = """
+                    SELECT COUNT(*) FROM Memories m
+                    JOIN MemoriesFts f ON m.rowid = f.rowid
+                    WHERE MemoriesFts MATCH @query
+                    """;
+                countCmd.Parameters.AddWithValue("@query", ftsQuery);
+                var total = Convert.ToInt32(countCmd.ExecuteScalar());
 
-            return (ReadEntries(cmd), total);
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = """
+                    SELECT m.Key, m.Value, m.CreatedAt, m.UpdatedAt
+                    FROM Memories m
+                    JOIN MemoriesFts f ON m.rowid = f.rowid
+                    WHERE MemoriesFts MATCH @query
+                    ORDER BY rank
+                    LIMIT @limit OFFSET @offset
+                    """;
+                cmd.Parameters.AddWithValue("@query", ftsQuery);
+                cmd.Parameters.AddWithValue("@limit", limit);
+                cmd.Parameters.AddWithValue("@offset", offset);
+
+                return (ReadEntries(cmd), total);
+            }
+            catch
+            {
+                // FTS5 failed — fall back to LIKE
+                var likePattern = $"%{query}%";
+
+                using var countCmd = conn.CreateCommand();
+                countCmd.CommandText = "SELECT COUNT(*) FROM Memories WHERE Key LIKE @q OR Value LIKE @q";
+                countCmd.Parameters.AddWithValue("@q", likePattern);
+                var total = Convert.ToInt32(countCmd.ExecuteScalar());
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = """
+                    SELECT Key, Value, CreatedAt, UpdatedAt FROM Memories
+                    WHERE Key LIKE @q OR Value LIKE @q
+                    ORDER BY UpdatedAt DESC
+                    LIMIT @limit OFFSET @offset
+                    """;
+                cmd.Parameters.AddWithValue("@q", likePattern);
+                cmd.Parameters.AddWithValue("@limit", limit);
+                cmd.Parameters.AddWithValue("@offset", offset);
+
+                return (ReadEntries(cmd), total);
+            }
         }
     }
 
@@ -235,19 +273,44 @@ public sealed class MemoryStore : IDisposable
                 UpdatedAt TEXT NOT NULL
             );
 
-            CREATE VIRTUAL TABLE IF NOT EXISTS MemoriesFts USING fts5(
-                Key, Value, content=Memories, content_rowid=rowid
-            );
             """;
         cmd.ExecuteNonQuery();
 
-        // Rebuild FTS index if empty but Memories has data (migration)
+        // Migration: ensure FTS5 uses trigram tokenizer
+        // If MemoriesFts exists without trigram, drop and recreate
+        var needsRecreate = false;
+        try
+        {
+            using var checkFts = conn.CreateCommand();
+            checkFts.CommandText = "SELECT sql FROM sqlite_master WHERE name = 'MemoriesFts'";
+            var ftsSchema = checkFts.ExecuteScalar() as string;
+            needsRecreate = ftsSchema is not null && !ftsSchema.Contains("trigram", StringComparison.OrdinalIgnoreCase);
+        }
+        catch { needsRecreate = true; }
+
+        if (needsRecreate)
+        {
+            using var dropCmd = conn.CreateCommand();
+            dropCmd.CommandText = "DROP TABLE IF EXISTS MemoriesFts";
+            dropCmd.ExecuteNonQuery();
+        }
+
+        using var createFts = conn.CreateCommand();
+        createFts.CommandText = """
+            CREATE VIRTUAL TABLE IF NOT EXISTS MemoriesFts USING fts5(
+                Key, Value, content=Memories, content_rowid=rowid,
+                tokenize = 'trigram'
+            );
+            """;
+        createFts.ExecuteNonQuery();
+
+        // Rebuild FTS index if out of sync with Memories
         using var checkCmd = conn.CreateCommand();
         checkCmd.CommandText = """
             SELECT (SELECT COUNT(*) FROM Memories) - (SELECT COUNT(*) FROM MemoriesFts)
             """;
         var diff = Convert.ToInt32(checkCmd.ExecuteScalar());
-        if (diff > 0)
+        if (diff != 0)
         {
             using var rebuildCmd = conn.CreateCommand();
             rebuildCmd.CommandText = "INSERT INTO MemoriesFts(MemoriesFts) VALUES('rebuild')";
@@ -282,10 +345,18 @@ public sealed class MemoryStore : IDisposable
     /// <summary>
     /// Escapes a user query for FTS5. Wraps each token in double quotes to prevent syntax errors.
     /// </summary>
+    /// <summary>
+    /// Builds an FTS5 MATCH query from user input.
+    /// Drops tokens shorter than 3 characters (trigram tokenizer minimum).
+    /// Joins remaining tokens with OR for broad matching.
+    /// </summary>
     private static string EscapeFtsQuery(string query)
     {
-        var tokens = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return string.Join(" ", tokens.Select(t => $"\"{t.Replace("\"", "\"\"")}\""));
+        var tokens = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+            .Where(t => t.Length >= 3)
+            .Select(t => $"\"{t.Replace("\"", "\"\"")}\"")
+            .ToList();
+        return tokens.Count == 0 ? "" : string.Join(" OR ", tokens);
     }
 
     #endregion
