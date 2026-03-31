@@ -1,4 +1,9 @@
-# Release Notes
+﻿# Release Notes
+
+## v0.2.0
+
+- **Working directory fix** — default CWD to user home instead of System32 when launched by host apps; supports `ESSENTIALS_CWD` env var override
+- **run_javascript validation** — return clear error message when `code` parameter is missing instead of generic MCP SDK error
 
 ## v0.1.0
 
