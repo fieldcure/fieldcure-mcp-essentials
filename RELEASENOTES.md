@@ -1,5 +1,14 @@
 ﻿# Release Notes
 
+## v0.3.0
+
+- **Persistent memory** — 3 new tools (`remember`, `forget`, `list_memories`) backed by SQLite with FTS5 full-text search
+- **Cross-client memory sharing** — memories stored in `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db`, shared across all MCP clients (AssistStudio, Claude Desktop, VS Code, etc.)
+- **Memory path override** — `--memory-path` CLI arg or `ESSENTIALS_MEMORY_PATH` env var
+- **FTS5 search** — `list_memories(query)` performs keyword search; without query returns recent entries
+- **Pagination** — `list_memories(limit, offset)` with `has_more` indicator
+- **Bulk forget** — `forget(query)` deletes all matching memories via FTS5
+
 ## v0.2.0
 
 - **Working directory fix** — default CWD to user home instead of System32 when launched by host apps; supports `ESSENTIALS_CWD` env var override

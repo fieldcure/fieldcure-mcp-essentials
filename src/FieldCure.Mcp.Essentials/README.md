@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 7 essential tools for any MCP client.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 10 essential tools for any MCP client.
 
 ## Tools
 
@@ -13,6 +13,21 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `read_file` | Text file reading with offset/limit for large files |
 | `write_file` | File writing (overwrite/append) with auto directory creation |
 | `search_files` | File search by glob pattern and content (grep-like) |
+| `remember` | Store a key-value memory (persisted in SQLite) |
+| `forget` | Delete memories by key or keyword search |
+| `list_memories` | Search and list stored memories with FTS5 and pagination |
+
+## Memory
+
+Memories are stored in SQLite (`%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db`) and shared across all MCP clients on the same machine.
+
+```
+# Custom memory path
+fieldcure-mcp-essentials --memory-path /path/to/memory.db
+
+# Or via environment variable
+ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
+```
 
 ## Quick Start
 
