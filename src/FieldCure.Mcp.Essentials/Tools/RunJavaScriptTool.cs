@@ -23,12 +23,15 @@ public static class RunJavaScriptTool
     [Description("Execute JavaScript in a sandboxed engine (no file/network access). Use for math calculations, data transformation, JSON processing, regex, encoding/decoding, and date calculations. Variables can be injected into the script scope.")]
     public static string RunJavaScript(
         [Description("JavaScript code (expression or script). The last expression's value is returned.")]
-        string code,
+        string? code = null,
         [Description("Timeout in seconds (default: 5, max: 30)")]
         int timeout_seconds = 5,
         [Description("Variables to inject into JS scope as JSON object, e.g. {\"data\": [...], \"x\": 42}")]
         string? variables = null)
     {
+        if (string.IsNullOrWhiteSpace(code))
+            return JsonSerializer.Serialize(new { result = (object?)null, error = "Parameter 'code' is required." }, JsonOptions);
+
         timeout_seconds = Math.Clamp(timeout_seconds, 1, 30);
         var consoleSb = new StringBuilder();
 
