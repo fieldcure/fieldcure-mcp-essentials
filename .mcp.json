@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "essentials": {
+      "command": "dotnet",
+      "args": ["run", "--project", "src/FieldCure.Mcp.Essentials"]
+    }
+  }
+}

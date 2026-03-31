@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>FieldCure.Mcp.Essentials</RootNamespace>
+    <AssemblyName>fieldcure-mcp-essentials</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <Version>0.1.0</Version>
+    <PackageId>FieldCure.Mcp.Essentials</PackageId>
+
+    <Authors>Jong Hyun Kim</Authors>
+    <Company>Fieldcure Co., Ltd.</Company>
+    <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
+    <Description>Essential MCP tools — HTTP, shell, JavaScript, file I/O, and environment info for any MCP client.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>mcp;essentials;http;shell;javascript;file-io</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Logo.png</PackageIcon>
+    <PackageReleaseNotes>v0.1.0: Initial release — 7 essential tools (http_request, run_command, run_javascript, get_environment, read_file, write_file, search_files)</PackageReleaseNotes>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>fieldcure-mcp-essentials</ToolCommandName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
+    <PackageReference Include="Jint" Version="4.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="Logo.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
