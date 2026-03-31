@@ -74,7 +74,6 @@ public static class MemoryTools
         return JsonSerializer.Serialize(new
         {
             total_count = entries.Count,
-            max_entries = MemoryStore.MaxEntries,
             entries = entries.Select(e => new
             {
                 key = e.Key,

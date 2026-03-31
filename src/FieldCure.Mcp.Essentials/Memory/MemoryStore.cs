@@ -11,8 +11,8 @@ public sealed class MemoryStore : IDisposable
 {
     private readonly string _connectionString;
 
-    public const int MaxEntries = 200;
-    private const int WarningThreshold = 180;
+    /// <summary>Recommended limit for system prompt injection (most recent N entries).</summary>
+    public const int PromptInjectionLimit = 50;
 
     public MemoryStore(string dbPath)
     {
@@ -73,14 +73,7 @@ public sealed class MemoryStore : IDisposable
         cmd.Parameters.AddWithValue("@now", now);
         cmd.ExecuteNonQuery();
 
-        string? warning = null;
-        var count = Count();
-        if (count >= MaxEntries)
-            warning = $"Memory has {count}/{MaxEntries} entries and has exceeded the soft limit. Consider removing old entries.";
-        else if (count >= WarningThreshold)
-            warning = $"Memory has {count}/{MaxEntries} entries. Consider removing old entries.";
-
-        return (true, warning);
+        return (true, null);
     }
 
     public bool Remove(string query)
