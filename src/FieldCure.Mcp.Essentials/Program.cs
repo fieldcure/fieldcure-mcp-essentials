@@ -1,4 +1,5 @@
 using System.Reflection;
+using FieldCure.Mcp.Essentials.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,9 @@ var cwd = Environment.GetEnvironmentVariable("ESSENTIALS_CWD")
 if (Directory.Exists(cwd))
     Environment.CurrentDirectory = cwd;
 
+// Resolve memory file path: CLI arg (--memory-path) > env var > default
+var memoryPath = MemoryStore.ResolvePath(args);
+
 var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 
 builder.Logging.AddConsole(options =>
@@ -18,6 +22,7 @@ builder.Logging.AddConsole(options =>
 });
 
 builder.Services
+    .AddSingleton(new MemoryStore(memoryPath))
     .AddMcpServer(options =>
     {
         options.ServerInfo = new()
