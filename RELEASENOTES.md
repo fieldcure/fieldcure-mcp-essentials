@@ -1,35 +1,58 @@
-﻿# Release Notes
+# Release Notes
 
-## v0.4.0
+## v0.4.0 (2026-03-31)
 
-- **FTS5 trigram tokenizer** — partial matching for CJK/mixed text (e.g., "1970" matches "1970년생")
-- **LIKE fallback** — automatic fallback when FTS5 query fails or tokens are too short
-- **Redesigned memory API** — `remember(key, value)` with upsert, `forget(key?, query?)` with bulk delete, `list_memories(query?, limit?, offset?)` with pagination
-- **MemoryPage search** — AutoSuggestBox for FTS5 keyword search in Settings
-- **Connecting state** — ProgressRing shown while Essentials server starts
+### Changes
 
-## v0.3.0
+- **FTS5 trigram tokenizer** — memory search now uses trigram tokenizer for substring matching
+- **LIKE fallback** — queries shorter than 3 characters fall back to LIKE search
 
-- **Persistent memory** — 3 new tools (`remember`, `forget`, `list_memories`) backed by SQLite with FTS5 full-text search
-- **Cross-client memory sharing** — memories stored in `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db`, shared across all MCP clients (AssistStudio, Claude Desktop, VS Code, etc.)
-- **Memory path override** — `--memory-path` CLI arg or `ESSENTIALS_MEMORY_PATH` env var
-- **FTS5 search** — `list_memories(query)` performs keyword search; without query returns recent entries
-- **Pagination** — `list_memories(limit, offset)` with `has_more` indicator
-- **Bulk forget** — `forget(query)` deletes all matching memories via FTS5
+---
 
-## v0.2.0
+## v0.3.0 (2026-03-31)
 
-- **Working directory fix** — default CWD to user home instead of System32 when launched by host apps; supports `ESSENTIALS_CWD` env var override
-- **run_javascript validation** — return clear error message when `code` parameter is missing instead of generic MCP SDK error
+### New Tools
 
-## v0.1.0
+- **`remember`** — Store a key-value memory (persisted in SQLite)
+- **`forget`** — Delete memories by key or keyword search
+- **`list_memories`** — Search and list stored memories with FTS5 and pagination
 
-Initial release — 7 essential tools:
+### Changes
 
-- `http_request` — Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD)
-- `run_command` — Shell command execution
-- `run_javascript` — Sandboxed JavaScript execution (Jint)
-- `get_environment` — System environment info
-- `read_file` — Text file reading with offset/limit
-- `write_file` — File writing with overwrite/append
-- `search_files` — File search by glob pattern and content
+- Tool count: 7 → 10
+- Redesigned memory API with FTS5 full-text search and structured responses
+- Removed entry limit — unlimited storage, prompt injection capped at 50
+
+---
+
+## v0.2.0 (2026-03-30)
+
+### Fixes
+
+- Default working directory changed to user home instead of System32
+- Return validation error when `run_javascript` code parameter is missing
+
+---
+
+## v0.1.0 (2026-03-30)
+
+Initial release.
+
+### Features
+
+- **7 MCP tools** for essential operations via stdio transport
+  - **HTTP**: `http_request` (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection
+  - **Shell**: `run_command` with timeout, working directory, and env vars
+  - **JavaScript**: `run_javascript` — sandboxed Jint engine with strict limits
+  - **Environment**: `get_environment` — local time, timezone, OS, hostname, username
+  - **File I/O**: `read_file`, `write_file`, `search_files`
+- **SSRF protection** — private IP range and loopback blocking for HTTP requests
+- **JavaScript sandbox** — 5s timeout, 100K statement limit, 64-depth recursion
+- **dotnet tool** packaging for global installation via NuGet
+
+### Tech Stack
+
+- .NET 8.0
+- [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk) v1.1.0
+- Jint (JavaScript interpreter)
+- Microsoft.Extensions.Hosting

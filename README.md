@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 7 essential tools — HTTP requests, shell commands, JavaScript execution, file I/O, and environment info — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 10 essential tools — HTTP requests, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **7 essential tools** — HTTP, shell, JavaScript sandbox, environment info, file read/write/search
+- **10 essential tools** — HTTP, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
 - **Zero configuration** — no API keys, no accounts, no setup
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests block private IP ranges and loopback addresses
@@ -93,6 +93,9 @@ Add to `.vscode/mcp.json`:
 | `read_file` | Read text files with offset and line limit for large files | — |
 | `write_file` | Write or append text to files with auto directory creation | Yes |
 | `search_files` | Search files by glob pattern and content (grep-like) | — |
+| `remember` | Store a key-value memory (persisted in SQLite) | — |
+| `forget` | Delete memories by key or keyword search | Yes |
+| `list_memories` | Search and list stored memories with FTS5 and pagination | — |
 
 ### Filesystem Overlap
 
@@ -100,7 +103,7 @@ Add to `.vscode/mcp.json`:
 
 ## JavaScript Sandbox
 
-`run_javascript` uses the [Jint](https://github.com/nickslavsky/jint) engine with strict limits:
+`run_javascript` uses the [Jint](https://github.com/sebastienros/jint) engine with strict limits:
 
 | Constraint | Value |
 |-----------|-------|
@@ -123,11 +126,25 @@ Variables can be injected into the script scope for data pipeline use:
    )
 ```
 
+## Memory
+
+Memories are stored in SQLite (`%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db`) and shared across all MCP clients on the same machine.
+
+```bash
+# Custom memory path
+fieldcure-mcp-essentials --memory-path /path/to/memory.db
+
+# Or via environment variable
+ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
+```
+
 ## Project Structure
 
 ```
 src/FieldCure.Mcp.Essentials/
 ├── Program.cs                  # MCP server entry point (stdio)
+├── Memory/
+│   └── MemoryStore.cs          # SQLite + FTS5 memory storage
 └── Tools/
     ├── HttpRequestTool.cs      # http_request (SSRF guard)
     ├── RunCommandTool.cs       # run_command
@@ -135,7 +152,8 @@ src/FieldCure.Mcp.Essentials/
     ├── GetEnvironmentTool.cs   # get_environment
     ├── ReadFileTool.cs         # read_file
     ├── WriteFileTool.cs        # write_file
-    └── SearchFilesTool.cs      # search_files
+    ├── SearchFilesTool.cs      # search_files
+    └── MemoryTools.cs          # remember / forget / list_memories
 ```
 
 ## Development

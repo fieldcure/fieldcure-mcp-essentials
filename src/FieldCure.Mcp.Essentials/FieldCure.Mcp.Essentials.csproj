@@ -14,7 +14,7 @@
     <Authors>Jong Hyun Kim</Authors>
     <Company>Fieldcure Co., Ltd.</Company>
     <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
-    <Description>Essential MCP tools — HTTP, shell, JavaScript, file I/O, and environment info for any MCP client.</Description>
+    <Description>Essential MCP tools — HTTP, shell, JavaScript, file I/O, environment info, and persistent memory for any MCP client.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</RepositoryUrl>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;essentials;http;shell;javascript;file-io</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v0.1.0: Initial release — 7 essential tools (http_request, run_command, run_javascript, get_environment, read_file, write_file, search_files)</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.4.0: FTS5 trigram search for memory tools, LIKE fallback. v0.3.0: Added memory tools (remember, forget, list_memories). v0.1.0: Initial release — 7 essential tools.</PackageReleaseNotes>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fieldcure-mcp-essentials</ToolCommandName>
