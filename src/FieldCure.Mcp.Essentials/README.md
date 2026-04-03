@@ -1,12 +1,14 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 10 essential tools for any MCP client.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 13 essential tools for any MCP client.
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection |
+| `web_search` | Search the web and return snippets (title, URL, description) |
+| `web_fetch` | Fetch a URL and extract readable text with length limit |
 | `run_command` | Shell command execution with timeout, working directory, and env vars |
 | `run_javascript` | Sandboxed JavaScript (Jint) — math, JSON, regex, data processing |
 | `get_environment` | System info — time, timezone, OS, hostname, username |
@@ -16,6 +18,10 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `remember` | Store a key-value memory (persisted in SQLite) |
 | `forget` | Delete memories by key or keyword search |
 | `list_memories` | Search and list stored memories with FTS5 and pagination |
+
+## Web Search
+
+`web_search` uses DuckDuckGo by default. Switch to Bing with `--search-engine bing` or `ESSENTIALS_SEARCH_ENGINE=bing`.
 
 ## Memory
 

@@ -1,10 +1,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FieldCure.Mcp.Essentials.Http;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
@@ -43,14 +42,12 @@ public static class HttpRequestTool
     {
         try
         {
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
-                || (uri.Scheme != "http" && uri.Scheme != "https"))
-            {
-                return JsonSerializer.Serialize(new { error = "Invalid URL. Only http:// and https:// are allowed." }, JsonOptions);
-            }
+            var (uri, urlError) = SsrfGuard.ValidateUrl(url);
+            if (uri is null)
+                return JsonSerializer.Serialize(new { error = urlError }, JsonOptions);
 
             // SSRF guard: resolve DNS and block private IPs
-            var ssrfError = await CheckSsrf(uri, cancellationToken);
+            var ssrfError = await SsrfGuard.CheckAsync(uri, cancellationToken);
             if (ssrfError is not null)
                 return JsonSerializer.Serialize(new { error = ssrfError }, JsonOptions);
 
@@ -141,41 +138,4 @@ public static class HttpRequestTool
         }
     }
 
-    /// <summary>
-    /// SSRF guard: resolves DNS and blocks connections to private/loopback IPs.
-    /// Returns error message if blocked, null if allowed.
-    /// </summary>
-    static async Task<string?> CheckSsrf(Uri uri, CancellationToken ct)
-    {
-        try
-        {
-            var addresses = await Dns.GetHostAddressesAsync(uri.Host, ct);
-            foreach (var addr in addresses)
-            {
-                if (IPAddress.IsLoopback(addr)
-                    || (addr.AddressFamily == AddressFamily.InterNetworkV6 && addr.IsIPv6LinkLocal)
-                    || (addr.AddressFamily == AddressFamily.InterNetworkV6 && addr.IsIPv6SiteLocal)
-                    || IsPrivateIpv4(addr))
-                {
-                    return $"SSRF blocked: {uri.Host} resolves to private address {addr}.";
-                }
-            }
-        }
-        catch (SocketException ex)
-        {
-            return $"DNS resolution failed for {uri.Host}: {ex.Message}";
-        }
-
-        return null;
-    }
-
-    static bool IsPrivateIpv4(IPAddress addr)
-    {
-        if (addr.AddressFamily != AddressFamily.InterNetwork) return false;
-        var bytes = addr.GetAddressBytes();
-        return bytes[0] == 10
-               || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-               || (bytes[0] == 192 && bytes[1] == 168)
-               || (bytes[0] == 169 && bytes[1] == 254); // link-local
-    }
 }

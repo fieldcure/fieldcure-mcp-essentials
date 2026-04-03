@@ -3,14 +3,15 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 10 essential tools — HTTP requests, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 13 essential tools — HTTP requests, web search & fetch, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **10 essential tools** — HTTP, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
+- **13 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
 - **Zero configuration** — no API keys, no accounts, no setup
+- **Web search & fetch** — DuckDuckGo (default) or Bing search, plus readable text extraction from any URL
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
-- **SSRF protection** — HTTP requests block private IP ranges and loopback addresses
+- **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
 - **Cross-client** — works with Claude Desktop, VS Code, AssistStudio, and any MCP-compatible client
 - **Stdio transport** — standard MCP subprocess model via JSON-RPC over stdin/stdout
 
@@ -87,6 +88,8 @@ Add to `.vscode/mcp.json`:
 | Tool | Description | Destructive |
 |------|-------------|:-----------:|
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with custom headers and body | — |
+| `web_search` | Search the web and return snippets (title, URL, description) | — |
+| `web_fetch` | Fetch a URL and extract readable text with length limit | — |
 | `run_command` | Execute shell commands with working directory and environment variables | Yes |
 | `run_javascript` | Sandboxed JavaScript execution (Jint) for math, data processing, JSON, regex | — |
 | `get_environment` | System info — local time, timezone, OS, hostname, username, .NET version | — |
@@ -96,6 +99,15 @@ Add to `.vscode/mcp.json`:
 | `remember` | Store a key-value memory (persisted in SQLite) | — |
 | `forget` | Delete memories by key or keyword search | Yes |
 | `list_memories` | Search and list stored memories with FTS5 and pagination | — |
+
+### `web_search` vs `web_fetch` vs `http_request`
+
+| | `http_request` | `web_search` | `web_fetch` |
+|---|---|---|---|
+| Purpose | API calls, raw HTTP | Web search | Read web pages |
+| Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Readable text (body only) |
+| Conversion | None | None | SmartReader HTML → text |
+| Length limit | None | `max_results` (max 10) | `max_length` (max 20000) |
 
 ### Filesystem Overlap
 
@@ -138,15 +150,38 @@ fieldcure-mcp-essentials --memory-path /path/to/memory.db
 ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
 ```
 
+## Web Search
+
+`web_search` uses DuckDuckGo by default. You can switch to Bing:
+
+```bash
+# CLI argument
+fieldcure-mcp-essentials --search-engine bing
+
+# Or environment variable
+ESSENTIALS_SEARCH_ENGINE=bing fieldcure-mcp-essentials
+```
+
+Supported engines: `duckduckgo` (default), `bing`
+
 ## Project Structure
 
 ```
 src/FieldCure.Mcp.Essentials/
 ├── Program.cs                  # MCP server entry point (stdio)
+├── Http/
+│   └── SsrfGuard.cs            # SSRF protection (shared by http_request & web_fetch)
 ├── Memory/
 │   └── MemoryStore.cs          # SQLite + FTS5 memory storage
+├── Search/
+│   ├── ISearchEngine.cs        # Search engine interface
+│   ├── SearchResult.cs         # Search result record
+│   ├── DuckDuckGoSearchEngine.cs  # DuckDuckGo lite scraping
+│   └── BingSearchEngine.cs     # Bing scraping
 └── Tools/
-    ├── HttpRequestTool.cs      # http_request (SSRF guard)
+    ├── HttpRequestTool.cs      # http_request
+    ├── WebSearchTool.cs        # web_search
+    ├── WebFetchTool.cs         # web_fetch (SmartReader)
     ├── RunCommandTool.cs       # run_command
     ├── RunJavaScriptTool.cs    # run_javascript (Jint sandbox)
     ├── GetEnvironmentTool.cs   # get_environment
