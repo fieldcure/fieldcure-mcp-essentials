@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,14 +22,14 @@
     <PackageTags>mcp;essentials;http;shell;javascript;file-io</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v0.4.0: FTS5 trigram search for memory tools, LIKE fallback. v0.3.0: Added memory tools (remember, forget, list_memories). v0.1.0: Initial release — 7 essential tools.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.4.1: Upgrade ModelContextProtocol SDK to 1.2.0.</PackageReleaseNotes>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fieldcure-mcp-essentials</ToolCommandName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ModelContextProtocol" Version="1.1.0" />
+    <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
     <PackageReference Include="Jint" Version="4.*" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.*" />
