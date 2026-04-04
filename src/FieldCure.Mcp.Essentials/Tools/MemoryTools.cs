@@ -6,9 +6,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tools for persistent key-value memory (remember, forget, list_memories).
+/// </summary>
 [McpServerToolType]
 public static class MemoryTools
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -16,6 +22,9 @@ public static class MemoryTools
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Stores or updates a key-value memory entry.
+    /// </summary>
     [McpServerTool(Name = "remember")]
     [Description("Store a memory. If the key already exists, the value is updated.")]
     public static string Remember(
@@ -35,6 +44,9 @@ public static class MemoryTools
         return JsonSerializer.Serialize(new { key, created, updated }, JsonOptions);
     }
 
+    /// <summary>
+    /// Deletes memories by exact key or keyword query.
+    /// </summary>
     [McpServerTool(Name = "forget")]
     [Description("Delete a memory by key, or by query to forget multiple matches.")]
     public static string Forget(
@@ -67,6 +79,9 @@ public static class MemoryTools
         }
     }
 
+    /// <summary>
+    /// Searches and lists stored memories with optional FTS5 query.
+    /// </summary>
     [McpServerTool(Name = "list_memories")]
     [Description("Search and list stored memories. Without a query, returns recent memories. With a query, performs keyword search across all memories.")]
     public static string ListMemories(

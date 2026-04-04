@@ -6,9 +6,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that writes or appends text to files with auto directory creation.
+/// </summary>
 [McpServerToolType]
 public static class WriteFileTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -16,6 +22,9 @@ public static class WriteFileTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Writes or appends content to a file and returns the result as JSON.
+    /// </summary>
     [McpServerTool(Name = "write_file", Destructive = true)]
     [Description("Write or append text to a file. Auto-creates parent directories. Returns absolute path and byte count.")]
     public static async Task<string> WriteFile(
@@ -68,6 +77,9 @@ public static class WriteFileTool
         }
     }
 
+    /// <summary>
+    /// Resolves a named encoding to an <see cref="Encoding"/> instance.
+    /// </summary>
     static Encoding GetEncoding(string name) => name.ToLowerInvariant() switch
     {
         "utf-8" or "utf8" => new UTF8Encoding(false),

@@ -6,9 +6,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that returns current system environment information.
+/// </summary>
 [McpServerToolType]
 public static class GetEnvironmentTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -16,6 +22,9 @@ public static class GetEnvironmentTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Returns system environment info as JSON.
+    /// </summary>
     [McpServerTool(Name = "get_environment")]
     [Description("Get current system environment info — local time, timezone, OS, hostname, username, working directory, .NET version. No parameters needed.")]
     public static string GetEnvironment()

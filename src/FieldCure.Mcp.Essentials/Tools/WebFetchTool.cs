@@ -3,13 +3,20 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using FieldCure.Mcp.Essentials.Http;
 using ModelContextProtocol.Server;
+using ReverseMarkdown;
 using SmartReader;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that fetches a web page and extracts its content as Markdown.
+/// </summary>
 [McpServerToolType]
 public static class WebFetchTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -17,6 +24,9 @@ public static class WebFetchTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Shared HTTP client for fetching web pages.
+    /// </summary>
     static readonly HttpClient SharedClient = new()
     {
         Timeout = TimeSpan.FromSeconds(30),
@@ -26,11 +36,24 @@ public static class WebFetchTool
         },
     };
 
+    /// <summary>
+    /// Converts cleaned HTML to Markdown.
+    /// </summary>
+    static readonly Converter MdConverter = new(new ReverseMarkdown.Config
+    {
+        UnknownTags = Config.UnknownTagsOption.PassThrough,
+        SmartHrefHandling = true,
+        GithubFlavored = true,
+    });
+
     const int DefaultMaxLength = 5000;
     const int AbsoluteMaxLength = 20000;
 
+    /// <summary>
+    /// Fetches a URL and extracts its main content as Markdown.
+    /// </summary>
     [McpServerTool(Name = "web_fetch")]
-    [Description("Fetch a web page URL and extract its main content as readable text (HTML tags removed). Use this to read articles, documentation, or any web page.")]
+    [Description("Fetch a web page URL and extract its main content as Markdown (headings, links, tables, code blocks preserved). Use this to read articles, documentation, or any web page.")]
     public static async Task<string> WebFetch(
         [Description("URL to fetch (http or https)")]
         string url,
@@ -64,11 +87,12 @@ public static class WebFetchTool
             if (article.IsReadable)
             {
                 title = article.Title;
-                text = article.TextContent?.Trim() ?? "";
+                var cleanHtml = article.Content ?? "";
+                text = MdConverter.Convert(cleanHtml).Trim();
             }
             else
             {
-                // Fallback: strip HTML tags roughly
+                // Fallback: strip HTML tags roughly (Markdown conversion not possible)
                 text = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", " ");
                 text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ").Trim();
             }

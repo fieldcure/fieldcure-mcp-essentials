@@ -5,9 +5,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that searches for files by name pattern and optionally by content.
+/// </summary>
 [McpServerToolType]
 public static class SearchFilesTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -15,6 +21,9 @@ public static class SearchFilesTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Searches for files matching a glob pattern and optional content filter.
+    /// </summary>
     [McpServerTool(Name = "search_files")]
     [Description("Search for files by name pattern (glob) and optionally by content. Returns file paths, sizes, and modification dates. Content matches include a preview line.")]
     public static async Task<string> SearchFiles(
@@ -102,6 +111,9 @@ public static class SearchFilesTool
         }
     }
 
+    /// <summary>
+    /// Searches a file for the first line matching the given pattern (case-insensitive).
+    /// </summary>
     static async Task<string?> FindContentMatch(string filePath, string pattern, CancellationToken ct)
     {
         try

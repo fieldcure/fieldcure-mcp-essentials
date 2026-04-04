@@ -8,7 +8,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 |------|-------------|
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection |
 | `web_search` | Search the web and return snippets (title, URL, description) |
-| `web_fetch` | Fetch a URL and extract readable text with length limit |
+| `web_fetch` | Fetch a URL and extract content as Markdown with length limit |
 | `run_command` | Shell command execution with timeout, working directory, and env vars |
 | `run_javascript` | Sandboxed JavaScript (Jint) — math, JSON, regex, data processing |
 | `get_environment` | System info — time, timezone, OS, hostname, username |
@@ -22,6 +22,19 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 ## Web Search
 
 `web_search` uses DuckDuckGo by default. Switch to Bing with `--search-engine bing` or `ESSENTIALS_SEARCH_ENGINE=bing`.
+
+Use the `region` parameter for localized results:
+
+```json
+// Korean results
+{ "query": "서울 맛집", "region": "ko-kr" }
+
+// US English results
+{ "query": "best restaurants NYC", "region": "en-us" }
+
+// Global (default)
+{ "query": "Python tutorial" }
+```
 
 ## Memory
 

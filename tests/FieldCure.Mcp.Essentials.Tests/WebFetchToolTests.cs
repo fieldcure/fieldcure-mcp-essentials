@@ -65,4 +65,13 @@ public class WebFetchToolTests
         var content = doc.RootElement.GetProperty("content").GetString();
         Assert.IsTrue(content!.Length <= 100);
     }
+
+    [TestMethod]
+    public async Task OutputContainsMarkdownSyntax()
+    {
+        var json = await WebFetchTool.WebFetch("https://example.com");
+        using var doc = JsonDocument.Parse(json);
+        var content = doc.RootElement.GetProperty("content").GetString()!;
+        Assert.IsTrue(content.Length > 0);
+    }
 }

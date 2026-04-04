@@ -6,9 +6,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that searches the web and returns snippet results.
+/// </summary>
 [McpServerToolType]
 public static class WebSearchTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -16,14 +22,19 @@ public static class WebSearchTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Searches the web and returns results as JSON.
+    /// </summary>
     [McpServerTool(Name = "web_search")]
-    [Description("Search the web and return a list of results with title, URL, and snippet. No full page content is fetched — use web_fetch for that.")]
+    [Description("Search the web and return a list of results with title, URL, and snippet. Use region for localized results (e.g. 'ko-kr' for Korean).")]
     public static async Task<string> WebSearch(
         ISearchEngine searchEngine,
         [Description("Search query")]
         string query,
         [Description("Maximum number of results to return (default: 5, max: 10)")]
         int max_results = 5,
+        [Description("Region code for localized results (e.g. 'ko-kr', 'en-us', 'ja-jp'). Omit for global results.")]
+        string? region = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -33,7 +44,7 @@ public static class WebSearchTool
 
             max_results = Math.Clamp(max_results, 1, 10);
 
-            var results = await searchEngine.SearchAsync(query, max_results, cancellationToken);
+            var results = await searchEngine.SearchAsync(query, max_results, region, cancellationToken);
 
             return JsonSerializer.Serialize(new { results }, JsonOptions);
         }

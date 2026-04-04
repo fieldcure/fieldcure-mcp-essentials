@@ -9,9 +9,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that executes JavaScript in a sandboxed Jint engine.
+/// </summary>
 [McpServerToolType]
 public static class RunJavaScriptTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -19,6 +25,9 @@ public static class RunJavaScriptTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Executes JavaScript code in a sandboxed engine and returns the result as JSON.
+    /// </summary>
     [McpServerTool(Name = "run_javascript")]
     [Description("Execute JavaScript in a sandboxed engine (no file/network access). Use for math calculations, data transformation, JSON processing, regex, encoding/decoding, and date calculations. Variables can be injected into the script scope.")]
     public static string RunJavaScript(
@@ -151,6 +160,9 @@ public static class RunJavaScriptTool
         }
     }
 
+    /// <summary>
+    /// Converts a <see cref="JsonElement"/> to a CLR object for Jint injection.
+    /// </summary>
     static object? ConvertJsonElement(JsonElement element) => element.ValueKind switch
     {
         JsonValueKind.String => element.GetString(),

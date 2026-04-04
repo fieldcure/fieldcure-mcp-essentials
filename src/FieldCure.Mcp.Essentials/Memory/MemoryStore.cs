@@ -14,6 +14,9 @@ public sealed class MemoryStore : IDisposable
     /// <summary>Recommended limit for system prompt injection (most recent N entries).</summary>
     public const int PromptInjectionLimit = 50;
 
+    /// <summary>
+    /// Initializes the memory store with the given SQLite database path.
+    /// </summary>
     public MemoryStore(string dbPath)
     {
         var dir = Path.GetDirectoryName(dbPath);
@@ -24,12 +27,18 @@ public sealed class MemoryStore : IDisposable
         Initialize();
     }
 
+    /// <summary>
+    /// Returns the default database path under %LOCALAPPDATA%.
+    /// </summary>
     public static string GetDefaultPath()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         return Path.Combine(localAppData, "FieldCure", "Mcp.Essentials", "memory.db");
     }
 
+    /// <summary>
+    /// Resolves the database path from CLI args, environment variable, or default.
+    /// </summary>
     public static string ResolvePath(string[] args)
     {
         for (int i = 0; i < args.Length - 1; i++)
@@ -258,6 +267,9 @@ public sealed class MemoryStore : IDisposable
 
     #region Private
 
+    /// <summary>
+    /// Creates the database schema and FTS5 index if needed.
+    /// </summary>
     private void Initialize()
     {
         using var conn = Open();
@@ -318,6 +330,9 @@ public sealed class MemoryStore : IDisposable
         }
     }
 
+    /// <summary>
+    /// Opens a new SQLite connection.
+    /// </summary>
     private SqliteConnection Open()
     {
         var conn = new SqliteConnection(_connectionString);
@@ -325,6 +340,9 @@ public sealed class MemoryStore : IDisposable
         return conn;
     }
 
+    /// <summary>
+    /// Reads memory entries from a command's result set.
+    /// </summary>
     private static List<MemoryEntry> ReadEntries(SqliteCommand cmd)
     {
         var entries = new List<MemoryEntry>();
@@ -343,12 +361,7 @@ public sealed class MemoryStore : IDisposable
     }
 
     /// <summary>
-    /// Escapes a user query for FTS5. Wraps each token in double quotes to prevent syntax errors.
-    /// </summary>
-    /// <summary>
-    /// Builds an FTS5 MATCH query from user input.
-    /// Drops tokens shorter than 3 characters (trigram tokenizer minimum).
-    /// Joins remaining tokens with OR for broad matching.
+    /// Builds an FTS5 MATCH query from user input, dropping tokens shorter than 3 characters.
     /// </summary>
     private static string EscapeFtsQuery(string query)
     {
@@ -362,6 +375,9 @@ public sealed class MemoryStore : IDisposable
     #endregion
 }
 
+/// <summary>
+/// Represents a single memory entry.
+/// </summary>
 public sealed class MemoryEntry
 {
     public required string Key { get; init; }

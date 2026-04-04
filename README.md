@@ -89,7 +89,7 @@ Add to `.vscode/mcp.json`:
 |------|-------------|:-----------:|
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with custom headers and body | — |
 | `web_search` | Search the web and return snippets (title, URL, description) | — |
-| `web_fetch` | Fetch a URL and extract readable text with length limit | — |
+| `web_fetch` | Fetch a URL and extract content as Markdown with length limit | — |
 | `run_command` | Execute shell commands with working directory and environment variables | Yes |
 | `run_javascript` | Sandboxed JavaScript execution (Jint) for math, data processing, JSON, regex | — |
 | `get_environment` | System info — local time, timezone, OS, hostname, username, .NET version | — |
@@ -105,8 +105,8 @@ Add to `.vscode/mcp.json`:
 | | `http_request` | `web_search` | `web_fetch` |
 |---|---|---|---|
 | Purpose | API calls, raw HTTP | Web search | Read web pages |
-| Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Readable text (body only) |
-| Conversion | None | None | SmartReader HTML → text |
+| Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Markdown (body only) |
+| Conversion | None | None | SmartReader HTML → Markdown |
 | Length limit | None | `max_results` (max 10) | `max_length` (max 20000) |
 
 ### Filesystem Overlap
@@ -152,14 +152,19 @@ ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
 
 ## Web Search
 
-`web_search` uses DuckDuckGo by default. You can switch to Bing:
+`web_search` uses DuckDuckGo by default. Switch to Bing with `--search-engine bing` or `ESSENTIALS_SEARCH_ENGINE=bing`.
 
-```bash
-# CLI argument
-fieldcure-mcp-essentials --search-engine bing
+Use the `region` parameter for localized results:
 
-# Or environment variable
-ESSENTIALS_SEARCH_ENGINE=bing fieldcure-mcp-essentials
+```json
+// Korean results
+{ "query": "서울 맛집", "region": "ko-kr" }
+
+// US English results
+{ "query": "best restaurants NYC", "region": "en-us" }
+
+// Global (default)
+{ "query": "Python tutorial" }
 ```
 
 Supported engines: `duckduckgo` (default), `bing`

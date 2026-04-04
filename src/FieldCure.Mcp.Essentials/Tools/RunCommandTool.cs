@@ -7,9 +7,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that executes shell commands and returns stdout, stderr, and exit code.
+/// </summary>
 [McpServerToolType]
 public static class RunCommandTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -17,8 +23,14 @@ public static class RunCommandTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    const int MaxOutputBytes = 102_400; // 100 KB per stream
+    /// <summary>
+    /// Maximum bytes to capture per output stream (100 KB).
+    /// </summary>
+    const int MaxOutputBytes = 102_400;
 
+    /// <summary>
+    /// Executes a shell command and returns the result as JSON.
+    /// </summary>
     [McpServerTool(Name = "run_command", Destructive = true)]
     [Description("Execute shell commands. Returns stdout, stderr, and exit code. Use for system operations, scripts, and CLI tools.")]
     public static async Task<string> RunCommand(
@@ -110,6 +122,9 @@ public static class RunCommandTool
         }
     }
 
+    /// <summary>
+    /// Reads from a stream up to a maximum byte count.
+    /// </summary>
     static async Task<string> ReadStreamLimited(StreamReader reader, int maxBytes, CancellationToken ct)
     {
         var sb = new StringBuilder();

@@ -8,9 +8,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that makes HTTP requests with SSRF protection.
+/// </summary>
 [McpServerToolType]
 public static class HttpRequestTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -18,13 +24,22 @@ public static class HttpRequestTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Shared HTTP client with no built-in timeout (per-request timeout used instead).
+    /// </summary>
     static readonly HttpClient SharedClient = new()
     {
-        Timeout = Timeout.InfiniteTimeSpan, // per-request timeout below
+        Timeout = Timeout.InfiniteTimeSpan,
     };
 
-    const int MaxResponseBytes = 1_048_576; // 1 MB
+    /// <summary>
+    /// Maximum response body size (1 MB).
+    /// </summary>
+    const int MaxResponseBytes = 1_048_576;
 
+    /// <summary>
+    /// Executes an HTTP request and returns the response as JSON.
+    /// </summary>
     [McpServerTool(Name = "http_request")]
     [Description("Make HTTP requests (GET, POST, PUT, DELETE, PATCH, HEAD). Supports custom headers and request body. Returns status code, headers, and response body.")]
     public static async Task<string> HttpRequest(

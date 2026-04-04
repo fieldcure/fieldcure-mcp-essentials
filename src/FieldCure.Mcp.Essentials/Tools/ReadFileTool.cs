@@ -6,9 +6,15 @@ using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
+/// <summary>
+/// MCP tool that reads text file content with offset and line limit support.
+/// </summary>
 [McpServerToolType]
 public static class ReadFileTool
 {
+    /// <summary>
+    /// JSON serialization options shared across all responses.
+    /// </summary>
     static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -16,6 +22,9 @@ public static class ReadFileTool
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>
+    /// Reads a text file and returns its content as JSON.
+    /// </summary>
     [McpServerTool(Name = "read_file")]
     [Description("Read text file content. Supports offset and max_lines for large files. Returns line count and truncation status.")]
     public static async Task<string> ReadFile(
@@ -72,6 +81,9 @@ public static class ReadFileTool
         }
     }
 
+    /// <summary>
+    /// Resolves a named encoding to an <see cref="Encoding"/> instance.
+    /// </summary>
     static Encoding GetEncoding(string name) => name.ToLowerInvariant() switch
     {
         "utf-8" or "utf8" => new UTF8Encoding(false),

@@ -2,8 +2,14 @@ using AngleSharp.Html.Parser;
 
 namespace FieldCure.Mcp.Essentials.Search;
 
+/// <summary>
+/// Searches the web using Bing (HTML scraping).
+/// </summary>
 public sealed class BingSearchEngine : ISearchEngine
 {
+    /// <summary>
+    /// Shared HTTP client for Bing requests.
+    /// </summary>
     static readonly HttpClient Http = new()
     {
         Timeout = TimeSpan.FromSeconds(15),
@@ -15,9 +21,14 @@ public sealed class BingSearchEngine : ISearchEngine
         },
     };
 
-    public async Task<SearchResult[]> SearchAsync(string query, int maxResults, CancellationToken ct = default)
+    /// <inheritdoc />
+    public async Task<SearchResult[]> SearchAsync(
+        string query, int maxResults, string? region = null, CancellationToken ct = default)
     {
         var url = $"https://www.bing.com/search?q={Uri.EscapeDataString(query)}";
+
+        if (TryParseRegion(region, out var lang, out var cc))
+            url += $"&setLang={lang}&cc={cc}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await Http.SendAsync(request, ct);
@@ -52,5 +63,25 @@ public sealed class BingSearchEngine : ISearchEngine
         }
 
         return results.ToArray();
+    }
+
+    /// <summary>
+    /// Parses a BCP 47 region code (e.g. "ko-kr") into language and country parts.
+    /// </summary>
+    static bool TryParseRegion(string? region, out string lang, out string cc)
+    {
+        lang = "";
+        cc = "";
+
+        if (string.IsNullOrWhiteSpace(region))
+            return false;
+
+        var parts = region.Split('-');
+        if (parts.Length != 2 || parts[0].Length == 0 || parts[1].Length == 0)
+            return false;
+
+        lang = parts[0].ToLowerInvariant();
+        cc = parts[1].ToUpperInvariant();
+        return true;
     }
 }

@@ -45,6 +45,9 @@ var app = builder.Build();
 await app.RunAsync();
 return 0;
 
+/// <summary>
+/// Resolves the search engine from CLI args, environment variable, or default.
+/// </summary>
 static ISearchEngine ResolveSearchEngine(string[] args)
 {
     // 1. CLI arg: --search-engine <name>
@@ -63,6 +66,9 @@ static ISearchEngine ResolveSearchEngine(string[] args)
     return new DuckDuckGoSearchEngine();
 }
 
+/// <summary>
+/// Creates a search engine instance by name.
+/// </summary>
 static ISearchEngine CreateEngine(string name) => name.ToLowerInvariant() switch
 {
     "bing" => new BingSearchEngine(),

@@ -51,6 +51,9 @@ public static class SsrfGuard
         return (uri, null);
     }
 
+    /// <summary>
+    /// Checks whether an IPv4 address belongs to a private or link-local range.
+    /// </summary>
     static bool IsPrivateIpv4(IPAddress addr)
     {
         if (addr.AddressFamily != AddressFamily.InterNetwork) return false;

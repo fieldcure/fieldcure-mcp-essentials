@@ -2,8 +2,14 @@ using AngleSharp.Html.Parser;
 
 namespace FieldCure.Mcp.Essentials.Search;
 
+/// <summary>
+/// Searches the web using DuckDuckGo Lite (HTML scraping).
+/// </summary>
 public sealed class DuckDuckGoSearchEngine : ISearchEngine
 {
+    /// <summary>
+    /// Shared HTTP client for DuckDuckGo requests.
+    /// </summary>
     static readonly HttpClient Http = new()
     {
         Timeout = TimeSpan.FromSeconds(15),
@@ -15,12 +21,29 @@ public sealed class DuckDuckGoSearchEngine : ISearchEngine
         },
     };
 
-    public async Task<SearchResult[]> SearchAsync(string query, int maxResults, CancellationToken ct = default)
+    /// <summary>
+    /// Maps BCP 47 region codes to DuckDuckGo <c>kl</c> parameter values.
+    /// </summary>
+    static readonly Dictionary<string, string> RegionMap = new(StringComparer.OrdinalIgnoreCase)
     {
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["q"] = query,
-        });
+        ["ko-kr"] = "kr-ko",
+        ["en-us"] = "us-en",
+        ["ja-jp"] = "jp-ja",
+        ["zh-cn"] = "cn-zh",
+        ["de-de"] = "de-de",
+        ["fr-fr"] = "fr-fr",
+    };
+
+    /// <inheritdoc />
+    public async Task<SearchResult[]> SearchAsync(
+        string query, int maxResults, string? region = null, CancellationToken ct = default)
+    {
+        var form = new Dictionary<string, string> { ["q"] = query };
+
+        if (region is not null && RegionMap.TryGetValue(region, out var kl))
+            form["kl"] = kl;
+
+        var content = new FormUrlEncodedContent(form);
 
         using var response = await Http.PostAsync("https://lite.duckduckgo.com/lite/", content, ct);
         response.EnsureSuccessStatusCode();
@@ -31,8 +54,6 @@ public sealed class DuckDuckGoSearchEngine : ISearchEngine
 
         var results = new List<SearchResult>();
 
-        // DuckDuckGo lite returns results in a table structure.
-        // Each result has: a link row, then a snippet row, then a spacer row.
         var links = doc.QuerySelectorAll("a.result-link");
         var snippets = doc.QuerySelectorAll("td.result-snippet");
 

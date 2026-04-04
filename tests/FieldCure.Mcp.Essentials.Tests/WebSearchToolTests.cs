@@ -56,17 +56,68 @@ public class WebSearchToolTests
         Assert.IsFalse(string.IsNullOrEmpty(first.GetProperty("url").GetString()));
     }
 
+    [TestMethod]
+    public async Task RegionParameterIsPassedThrough()
+    {
+        var engine = new FakeSearchEngine(5);
+        var json = await WebSearchTool.WebSearch(engine, "test", region: "ko-kr");
+        using var doc = JsonDocument.Parse(json);
+        var results = doc.RootElement.GetProperty("results");
+        Assert.IsTrue(results.GetArrayLength() > 0);
+        // Verify region was captured by FakeSearchEngine
+        Assert.AreEqual("ko-kr", engine.LastRegion);
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task DuckDuckGoWithKoreanRegion()
+    {
+        var engine = new DuckDuckGoSearchEngine();
+        var json = await WebSearchTool.WebSearch(engine, "서울 날씨", region: "ko-kr");
+        using var doc = JsonDocument.Parse(json);
+        var results = doc.RootElement.GetProperty("results");
+        Assert.IsTrue(results.GetArrayLength() > 0);
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task NullRegionWorksLikeGlobal()
+    {
+        var engine = new DuckDuckGoSearchEngine();
+        var json = await WebSearchTool.WebSearch(engine, "test query", region: null);
+        using var doc = JsonDocument.Parse(json);
+        Assert.IsFalse(doc.RootElement.TryGetProperty("error", out _));
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task InvalidRegionFallsBackToGlobal()
+    {
+        var engine = new DuckDuckGoSearchEngine();
+        var json = await WebSearchTool.WebSearch(engine, "test", region: "xx-yy");
+        using var doc = JsonDocument.Parse(json);
+        // Should not error — just global results
+        Assert.IsFalse(doc.RootElement.TryGetProperty("error", out _));
+    }
+
     /// <summary>
-    /// A fake search engine for unit testing max_results clamping.
+    /// A fake search engine for unit testing.
     /// </summary>
     sealed class FakeSearchEngine : ISearchEngine
     {
         readonly int _available;
 
+        /// <summary>
+        /// The last region value passed to <see cref="SearchAsync"/>.
+        /// </summary>
+        public string? LastRegion { get; private set; }
+
         public FakeSearchEngine(int available) => _available = available;
 
-        public Task<SearchResult[]> SearchAsync(string query, int maxResults, CancellationToken ct = default)
+        public Task<SearchResult[]> SearchAsync(
+            string query, int maxResults, string? region = null, CancellationToken ct = default)
         {
+            LastRegion = region;
             var count = Math.Min(maxResults, _available);
             var results = Enumerable.Range(1, count)
                 .Select(i => new SearchResult($"Title {i}", $"https://example.com/{i}", $"Snippet {i}"))
