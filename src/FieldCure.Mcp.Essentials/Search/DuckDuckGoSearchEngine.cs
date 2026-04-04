@@ -34,10 +34,17 @@ public sealed class DuckDuckGoSearchEngine : ISearchEngine
         ["fr-fr"] = "fr-fr",
     };
 
+    /// <summary>
+    /// Enforces minimum delay between requests to avoid rate-limiting.
+    /// </summary>
+    static readonly RequestThrottle Throttle = new(TimeSpan.FromSeconds(3));
+
     /// <inheritdoc />
     public async Task<SearchResult[]> SearchAsync(
         string query, int maxResults, string? region = null, CancellationToken ct = default)
     {
+        await Throttle.WaitAsync(ct);
+
         var form = new Dictionary<string, string> { ["q"] = query };
 
         if (region is not null && RegionMap.TryGetValue(region, out var kl))

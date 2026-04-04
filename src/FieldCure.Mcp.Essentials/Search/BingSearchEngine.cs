@@ -21,10 +21,17 @@ public sealed class BingSearchEngine : ISearchEngine
         },
     };
 
+    /// <summary>
+    /// Enforces minimum delay between requests to avoid rate-limiting.
+    /// </summary>
+    static readonly RequestThrottle Throttle = new(TimeSpan.FromSeconds(2));
+
     /// <inheritdoc />
     public async Task<SearchResult[]> SearchAsync(
         string query, int maxResults, string? region = null, CancellationToken ct = default)
     {
+        await Throttle.WaitAsync(ct);
+
         var url = $"https://www.bing.com/search?q={Uri.EscapeDataString(query)}";
 
         if (TryParseRegion(region, out var lang, out var cc))
