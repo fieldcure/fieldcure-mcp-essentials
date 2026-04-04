@@ -41,7 +41,7 @@ public static class WebFetchTool
     /// </summary>
     static readonly Converter MdConverter = new(new ReverseMarkdown.Config
     {
-        UnknownTags = Config.UnknownTagsOption.PassThrough,
+        UnknownTags = Config.UnknownTagsOption.Bypass,
         SmartHrefHandling = true,
         GithubFlavored = true,
     });
