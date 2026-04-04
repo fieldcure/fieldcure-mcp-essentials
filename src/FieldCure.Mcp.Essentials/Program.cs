@@ -15,7 +15,7 @@ if (Directory.Exists(cwd))
 // Resolve memory file path: CLI arg (--memory-path) > env var > default
 var memoryPath = MemoryStore.ResolvePath(args);
 
-// Resolve search engine: CLI arg (--search-engine) > env var > default (duckduckgo)
+// Resolve search engine: CLI arg (--search-engine) > env var > default (bing)
 var searchEngine = ResolveSearchEngine(args);
 
 var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
@@ -62,8 +62,8 @@ static ISearchEngine ResolveSearchEngine(string[] args)
     if (!string.IsNullOrWhiteSpace(env))
         return CreateEngine(env);
 
-    // 3. Default
-    return new DuckDuckGoSearchEngine();
+    // 3. Default (Bing — DuckDuckGo frequently blocks automated requests)
+    return new BingSearchEngine();
 }
 
 /// <summary>

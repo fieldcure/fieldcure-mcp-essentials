@@ -1,5 +1,14 @@
 # Release Notes
 
+## v0.5.1 (2026-04-04)
+
+### Changed
+
+- Default search engine changed to Bing (DuckDuckGo blocks bot traffic)
+- DuckDuckGo still available via `--search-engine duckduckgo`
+
+---
+
 ## v0.5.0 (2026-04-04)
 
 ### New Features

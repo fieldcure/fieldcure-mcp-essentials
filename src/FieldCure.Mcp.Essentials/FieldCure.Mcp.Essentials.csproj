@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>0.5.0</Version>
+    <Version>0.5.1</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;essentials;http;web-search;shell;javascript;file-io</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v0.5.0: Add region parameter to web_search for localized results. web_fetch now returns Markdown instead of plain text.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.5.1: Default search engine changed from DuckDuckGo to Bing (DuckDuckGo frequently blocks automated requests). Use --search-engine duckduckgo to switch back.</PackageReleaseNotes>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fieldcure-mcp-essentials</ToolCommandName>
