@@ -28,6 +28,7 @@ public class WebSearchToolTests
     }
 
     [TestMethod]
+    [TestCategory("Integration")]
     public async Task DuckDuckGoReturnsResults()
     {
         var engine = new DuckDuckGoSearchEngine();
