@@ -1,5 +1,22 @@
 # Release Notes
 
+## v0.5.0 (2026-04-04)
+
+### New Features
+
+- **`web_search` region parameter** — localized search results via `region` code (e.g. `ko-kr`, `en-us`)
+  - DuckDuckGo: `kl` parameter mapping
+  - Bing: `setLang` + `cc` parameter mapping
+  - Unrecognized region falls back to global search (no error)
+- **`web_fetch` Markdown output** — page content now returned as Markdown (headings, links, tables, code blocks preserved) via ReverseMarkdown
+
+### Changed
+
+- `web_fetch` description updated to reflect Markdown output
+- `ISearchEngine.SearchAsync` signature now includes optional `region` parameter
+
+---
+
 ## v0.4.1 (2026-04-03)
 
 ### Changed
