@@ -1,4 +1,5 @@
 using System.Reflection;
+using FieldCure.Mcp.Essentials;
 using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,29 +51,53 @@ return 0;
 /// </summary>
 static ISearchEngine ResolveSearchEngine(string[] args)
 {
-    // 1. CLI arg: --search-engine <name>
-    for (int i = 0; i < args.Length - 1; i++)
+    var engineName = ResolveArg(args, "--search-engine", "ESSENTIALS_SEARCH_ENGINE");
+    var apiKey = ResolveArg(args, "--search-api-key", "ESSENTIALS_SEARCH_API_KEY")
+                 ?? ReadFromPasswordVault("FieldCure:Essentials:SearchApiKey");
+
+    if (engineName is null)
     {
-        if (args[i] is "--search-engine")
-            return CreateEngine(args[i + 1]);
+        // Default: fallback engine (Bing primary, DDG secondary).
+        // Automatically switches when one engine returns empty results (CAPTCHA).
+        return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
     }
 
-    // 2. Environment variable
-    var env = Environment.GetEnvironmentVariable("ESSENTIALS_SEARCH_ENGINE");
-    if (!string.IsNullOrWhiteSpace(env))
-        return CreateEngine(env);
-
-    // 3. Default: fallback engine (Bing primary, DDG secondary).
-    // Automatically switches when one engine returns empty results (CAPTCHA).
-    return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
+    return CreateEngine(engineName, apiKey);
 }
 
 /// <summary>
-/// Creates a search engine instance by name.
+/// Resolves a value from CLI args or environment variable.
 /// </summary>
-static ISearchEngine CreateEngine(string name) => name.ToLowerInvariant() switch
+static string? ResolveArg(string[] args, string cliFlag, string envVar)
+{
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] == cliFlag)
+            return args[i + 1];
+    }
+
+    var env = Environment.GetEnvironmentVariable(envVar);
+    return string.IsNullOrWhiteSpace(env) ? null : env;
+}
+
+/// <summary>
+/// Reads a credential from Windows Credential Manager (PasswordVault-compatible).
+/// </summary>
+static string? ReadFromPasswordVault(string resourceName, string userName = "default") =>
+    PasswordVault.Read(resourceName, userName);
+
+/// <summary>
+/// Creates a search engine instance by name, with optional API key for paid engines.
+/// </summary>
+static ISearchEngine CreateEngine(string name, string? apiKey) => name.ToLowerInvariant() switch
 {
     "bing" => new BingSearchEngine(),
     "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
-    _ => throw new ArgumentException($"Unknown search engine: '{name}'. Supported: duckduckgo, bing"),
+    "serper" => new SerperSearchEngine(apiKey ?? throw new ArgumentException(
+        "Serper requires --search-api-key or ESSENTIALS_SEARCH_API_KEY")),
+    "tavily" => new TavilySearchEngine(apiKey ?? throw new ArgumentException(
+        "Tavily requires --search-api-key or ESSENTIALS_SEARCH_API_KEY")),
+    "serpapi" => new SerpApiSearchEngine(apiKey ?? throw new ArgumentException(
+        "SerpApi requires --search-api-key or ESSENTIALS_SEARCH_API_KEY")),
+    _ => throw new ArgumentException($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi"),
 };
