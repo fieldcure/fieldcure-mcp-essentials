@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 13 essential tools — HTTP requests, web search & fetch, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 12 essential tools — HTTP requests, web search & fetch, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **13 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
+- **12 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
 - **Zero configuration** — no API keys, no accounts, no setup
 - **Web search & fetch** — DuckDuckGo (default) or Bing search, plus readable text extraction from any URL
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)

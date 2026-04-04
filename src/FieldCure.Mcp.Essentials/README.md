@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 13 essential tools for any MCP client.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12 essential tools for any MCP client.
 
 ## Tools
 
