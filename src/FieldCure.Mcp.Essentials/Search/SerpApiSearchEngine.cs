@@ -19,7 +19,7 @@ public sealed class SerpApiSearchEngine : ISearchEngine
     public async Task<SearchResult[]> SearchAsync(
         string query, int maxResults, string? region = null, CancellationToken ct = default)
     {
-        var url = $"https://serpapi.com/search?engine=google&q={Uri.EscapeDataString(query)}&api_key={_apiKey}&num={maxResults}";
+        var url = $"https://serpapi.com/search?engine=google&q={Uri.EscapeDataString(query)}&api_key={_apiKey}";
 
         if (TryParseRegion(region, out var lang, out var country))
             url += $"&hl={lang}&gl={country}";
@@ -29,7 +29,8 @@ public sealed class SerpApiSearchEngine : ISearchEngine
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        return ParseResults(json);
+        var results = ParseResults(json);
+        return results.Length <= maxResults ? results : results[..maxResults];
     }
 
     /// <summary>

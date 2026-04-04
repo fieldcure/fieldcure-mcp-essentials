@@ -21,20 +21,32 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 
 ## Web Search
 
-`web_search` uses a fallback engine (Bing → DuckDuckGo) by default — auto-switches on CAPTCHA. Force a single engine with `--search-engine bing` or `--search-engine duckduckgo`.
+Default engine is Bing (free, no API key needed). For more reliable results, use an API-based engine:
+
+| Engine | Free Tier | API Key |
+|--------|-----------|---------|
+| Bing (default) | Unlimited (scraping) | Not needed |
+| Serper | 2,500 one-time | [serper.dev](https://serper.dev) |
+| Tavily | 1,000/month | [tavily.com](https://tavily.com) |
+| SerpApi | 100/month | [serpapi.com](https://serpapi.com) |
+
+```bash
+# Use Serper
+fieldcure-mcp-essentials --search-engine serper --search-api-key YOUR_KEY
+
+# Or via environment variables
+ESSENTIALS_SEARCH_ENGINE=tavily ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-essentials
+```
+
+API keys can also be stored in Windows PasswordVault (`FieldCure:Essentials:SearchApiKey`).
 
 Use the `region` parameter for localized results:
 
 ```json
-// Korean results
 { "query": "서울 맛집", "region": "ko-kr" }
-
-// US English results
-{ "query": "best restaurants NYC", "region": "en-us" }
-
-// Global (default)
-{ "query": "Python tutorial" }
 ```
+
+Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA.
 
 ## Memory
 
@@ -81,7 +93,7 @@ dotnet tool install -g FieldCure.Mcp.Essentials
 ## Requirements
 
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-- No API keys or accounts needed
+- No API keys needed for default Bing; optional API keys for Serper, Tavily, SerpApi
 
 ## Links
 

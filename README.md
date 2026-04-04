@@ -8,8 +8,8 @@ Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcont
 ## Features
 
 - **12 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
-- **Zero configuration** — no API keys, no accounts, no setup
-- **Web search & fetch** — DuckDuckGo (default) or Bing search, plus readable text extraction from any URL
+- **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi
+- **Web search & fetch** — Bing (default, free) with optional API-based engines (Serper, Tavily, SerpApi), plus readable text extraction from any URL
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
 - **Cross-client** — works with Claude Desktop, VS Code, AssistStudio, and any MCP-compatible client
@@ -152,7 +152,50 @@ ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
 
 ## Web Search
 
-`web_search` uses a fallback engine (Bing → DuckDuckGo) by default — if one engine is blocked (CAPTCHA), it automatically switches to the other. Force a single engine with `--search-engine bing` or `--search-engine duckduckgo`.
+Default engine is Bing (free, no API key needed). For more reliable results, use an API-based engine:
+
+| Engine | Free Tier | API Key |
+|--------|-----------|---------|
+| Bing (default) | Unlimited (scraping) | Not needed |
+| Serper | 2,500 one-time | [serper.dev](https://serper.dev) |
+| Tavily | 1,000/month | [tavily.com](https://tavily.com) |
+| SerpApi | 100/month | [serpapi.com](https://serpapi.com) |
+
+```bash
+# Use Serper
+fieldcure-mcp-essentials --search-engine serper --search-api-key YOUR_KEY
+
+# Use Tavily
+fieldcure-mcp-essentials --search-engine tavily --search-api-key YOUR_KEY
+
+# Or via environment variables
+ESSENTIALS_SEARCH_ENGINE=serper ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-essentials
+```
+
+### API Key Security
+
+| Engine | Auth Method | Key Exposure |
+|--------|-------------|--------------|
+| Serper | HTTP header (`X-API-KEY`) | Not in URL |
+| Tavily | Request body (`api_key` field) | Not in URL |
+| SerpApi | URL query parameter (`api_key=xxx`) | Visible in server logs |
+
+API keys can also be stored in Windows PasswordVault (`FieldCure:Essentials:SearchApiKey`) — never exposed via environment variables or CLI args.
+
+### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "essentials": {
+      "command": "fieldcure-mcp-essentials",
+      "args": ["--search-engine", "serper", "--search-api-key", "YOUR_KEY"]
+    }
+  }
+}
+```
+
+### Region
 
 Use the `region` parameter for localized results:
 
@@ -167,7 +210,7 @@ Use the `region` parameter for localized results:
 { "query": "Python tutorial" }
 ```
 
-Supported engines: `bing`, `duckduckgo` (default: auto-fallback between both)
+Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA.
 
 ## Project Structure
 
@@ -181,8 +224,12 @@ src/FieldCure.Mcp.Essentials/
 ├── Search/
 │   ├── ISearchEngine.cs        # Search engine interface
 │   ├── SearchResult.cs         # Search result record
+│   ├── BingSearchEngine.cs     # Bing scraping (default)
 │   ├── DuckDuckGoSearchEngine.cs  # DuckDuckGo lite scraping
-│   └── BingSearchEngine.cs     # Bing scraping
+│   ├── FallbackSearchEngine.cs # Auto-rotate on CAPTCHA
+│   ├── SerperSearchEngine.cs   # Serper.dev API
+│   ├── TavilySearchEngine.cs   # Tavily API
+│   └── SerpApiSearchEngine.cs  # SerpApi API
 └── Tools/
     ├── HttpRequestTool.cs      # http_request
     ├── WebSearchTool.cs        # web_search

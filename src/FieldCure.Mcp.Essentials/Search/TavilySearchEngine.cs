@@ -20,7 +20,6 @@ public sealed class TavilySearchEngine : ISearchEngine
     {
         var body = new Dictionary<string, object>
         {
-            ["api_key"] = _apiKey,
             ["query"] = query,
             ["max_results"] = maxResults,
         };
@@ -29,6 +28,7 @@ public sealed class TavilySearchEngine : ISearchEngine
         {
             Content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json"),
         };
+        request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {_apiKey}");
 
         using var response = await Http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
