@@ -62,7 +62,7 @@ public sealed class BingSearchEngine : ISearchEngine
             results.Add(new SearchResult(title, href, snippet));
         }
 
-        return results.ToArray();
+        return [.. results];
     }
 
     /// <summary>

@@ -72,6 +72,6 @@ public sealed class DuckDuckGoSearchEngine : ISearchEngine
             results.Add(new SearchResult(title, href, snippet));
         }
 
-        return results.ToArray();
+        return [.. results];
     }
 }
