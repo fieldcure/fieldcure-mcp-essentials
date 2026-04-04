@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.6.0 (2026-04-04)
+
+### New Features
+
+- **Serper search engine** — Google results via Serper.dev API (`--search-engine serper`)
+- **Tavily search engine** — AI-optimized search with content snippets (`--search-engine tavily`)
+- **SerpApi search engine** — Google/Scholar/Patents via SerpApi (`--search-engine serpapi`)
+- **Unified API key** — `--search-api-key`, `ESSENTIALS_SEARCH_API_KEY`, or Windows PasswordVault
+- **PasswordVault integration** — API keys read from Windows Credential Manager (P/Invoke), never exposed via environment variables
+
+### Notes
+
+- API-based engines require an API key. Without a key, Bing (free) is used by default.
+- Tavily returns content snippets with results, reducing the need for `web_fetch`.
+- SerpApi passes the API key in the URL query string — consider this for sensitive environments.
+
+---
+
 ## v0.5.2 (2026-04-04)
 
 ### New Features
