@@ -152,7 +152,7 @@ ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
 
 ## Web Search
 
-`web_search` uses Bing by default. Switch to DuckDuckGo with `--search-engine duckduckgo` or `ESSENTIALS_SEARCH_ENGINE=duckduckgo`.
+`web_search` uses a fallback engine (Bing → DuckDuckGo) by default — if one engine is blocked (CAPTCHA), it automatically switches to the other. Force a single engine with `--search-engine bing` or `--search-engine duckduckgo`.
 
 Use the `region` parameter for localized results:
 
@@ -167,7 +167,7 @@ Use the `region` parameter for localized results:
 { "query": "Python tutorial" }
 ```
 
-Supported engines: `bing` (default), `duckduckgo`
+Supported engines: `bing`, `duckduckgo` (default: auto-fallback between both)
 
 ## Project Structure
 

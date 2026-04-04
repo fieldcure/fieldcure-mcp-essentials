@@ -1,5 +1,22 @@
 # Release Notes
 
+## v0.5.2 (2026-04-04)
+
+### New Features
+
+- **FallbackSearchEngine** — auto-rotates between Bing and DuckDuckGo when one returns empty results (CAPTCHA detection)
+  - Tries fallback engine immediately in the same call
+  - Subsequent calls continue with the working engine
+  - `params ISearchEngine[]` supports 2+ engines
+- **Randomized request throttling** — delays between search requests use a random range (Bing 2-4s, DDG 3-5s) to mimic human behavior
+
+### Changed
+
+- Default engine is now `FallbackSearchEngine(Bing, DuckDuckGo)` instead of single Bing
+- `--search-engine bing` or `--search-engine duckduckgo` still selects a single engine
+
+---
+
 ## v0.5.1 (2026-04-04)
 
 ### Changed

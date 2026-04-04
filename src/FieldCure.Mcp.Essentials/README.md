@@ -21,7 +21,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 
 ## Web Search
 
-`web_search` uses Bing by default. Switch to DuckDuckGo with `--search-engine duckduckgo` or `ESSENTIALS_SEARCH_ENGINE=duckduckgo`.
+`web_search` uses a fallback engine (Bing → DuckDuckGo) by default — auto-switches on CAPTCHA. Force a single engine with `--search-engine bing` or `--search-engine duckduckgo`.
 
 Use the `region` parameter for localized results:
 
