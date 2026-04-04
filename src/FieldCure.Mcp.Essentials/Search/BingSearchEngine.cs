@@ -24,7 +24,7 @@ public sealed class BingSearchEngine : ISearchEngine
     /// <summary>
     /// Enforces minimum delay between requests to avoid rate-limiting.
     /// </summary>
-    static readonly RequestThrottle Throttle = new(TimeSpan.FromSeconds(2));
+    static readonly RequestThrottle Throttle = new(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4));
 
     /// <inheritdoc />
     public async Task<SearchResult[]> SearchAsync(

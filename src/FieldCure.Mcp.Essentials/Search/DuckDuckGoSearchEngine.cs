@@ -37,7 +37,7 @@ public sealed class DuckDuckGoSearchEngine : ISearchEngine
     /// <summary>
     /// Enforces minimum delay between requests to avoid rate-limiting.
     /// </summary>
-    static readonly RequestThrottle Throttle = new(TimeSpan.FromSeconds(3));
+    static readonly RequestThrottle Throttle = new(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(5));
 
     /// <inheritdoc />
     public async Task<SearchResult[]> SearchAsync(

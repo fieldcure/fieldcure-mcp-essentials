@@ -62,8 +62,9 @@ static ISearchEngine ResolveSearchEngine(string[] args)
     if (!string.IsNullOrWhiteSpace(env))
         return CreateEngine(env);
 
-    // 3. Default (Bing — DuckDuckGo frequently blocks automated requests)
-    return new BingSearchEngine();
+    // 3. Default: fallback engine (Bing primary, DDG secondary).
+    // Automatically switches when one engine returns empty results (CAPTCHA).
+    return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
 }
 
 /// <summary>
