@@ -229,6 +229,7 @@ Use the `region` parameter for localized results:
 ```
 
 Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA.
+If a paid engine is selected but the API key is missing, a warning is logged to stderr and the server falls back to Bing/DuckDuckGo automatically.
 
 ## Project Structure
 

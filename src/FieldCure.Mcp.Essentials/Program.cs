@@ -103,16 +103,34 @@ static string? ReadFromPasswordVault(string resourceName, string userName = "def
 
 /// <summary>
 /// Creates a search engine instance by name, with optional API key for paid engines.
+/// Falls back to Bing/DuckDuckGo if a paid engine's API key is missing.
 /// </summary>
-static ISearchEngine CreateEngine(string name, string? apiKey) => name.ToLowerInvariant() switch
+static ISearchEngine CreateEngine(string name, string? apiKey)
 {
-    "bing" => new BingSearchEngine(),
-    "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
-    "serper" => new SerperSearchEngine(apiKey ?? throw new ArgumentException(
-        "Serper requires --search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerperApiKey'")),
-    "tavily" => new TavilySearchEngine(apiKey ?? throw new ArgumentException(
-        "Tavily requires --search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:TavilyApiKey'")),
-    "serpapi" => new SerpApiSearchEngine(apiKey ?? throw new ArgumentException(
-        "SerpApi requires --search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerpApiApiKey'")),
-    _ => throw new ArgumentException($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi"),
-};
+    var fallback = new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
+
+    return name.ToLowerInvariant() switch
+    {
+        "bing" => new BingSearchEngine(),
+        "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
+        "serper" => apiKey is not null
+            ? new SerperSearchEngine(apiKey)
+            : LogAndFallback("Serper API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerperApiKey')", fallback),
+        "tavily" => apiKey is not null
+            ? new TavilySearchEngine(apiKey)
+            : LogAndFallback("Tavily API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:TavilyApiKey')", fallback),
+        "serpapi" => apiKey is not null
+            ? new SerpApiSearchEngine(apiKey)
+            : LogAndFallback("SerpApi API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerpApiApiKey')", fallback),
+        _ => LogAndFallback($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi", fallback),
+    };
+}
+
+/// <summary>
+/// Logs a warning to stderr and returns the fallback search engine.
+/// </summary>
+static ISearchEngine LogAndFallback(string message, ISearchEngine fallback)
+{
+    Console.Error.WriteLine($"[Warning] {message} — falling back to Bing/DuckDuckGo.");
+    return fallback;
+}

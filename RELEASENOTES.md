@@ -1,5 +1,15 @@
 # Release Notes
 
+## v0.7.1 (2026-04-06)
+
+### Fixed
+
+- **Graceful fallback on missing API key** — paid engines (Serper, Tavily, SerpApi) now fall back to Bing/DuckDuckGo instead of crashing when the API key is not found
+- Warning logged to stderr: `[Warning] ... — falling back to Bing/DuckDuckGo.`
+- Unknown engine names also fall back gracefully instead of throwing
+
+---
+
 ## v0.7.0 (2026-04-06)
 
 ### Changed
