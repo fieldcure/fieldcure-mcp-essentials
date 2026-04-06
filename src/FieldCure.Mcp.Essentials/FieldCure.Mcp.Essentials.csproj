@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v0.6.0: Optional API-based search engines (Serper, Tavily, SerpApi). Bing remains free default. Unified API key via CLI, env var, or PasswordVault.</PackageReleaseNotes>
+    <PackageReleaseNotes>v0.7.0: Per-engine PasswordVault API key storage (SerperApiKey, TavilyApiKey, SerpApiApiKey). CLI and env var override still supported.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>

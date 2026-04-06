@@ -1,5 +1,18 @@
 # Release Notes
 
+## v0.7.0 (2026-04-06)
+
+### Changed
+
+- **Per-engine PasswordVault API keys** — each search engine now has its own PasswordVault resource instead of a single shared key
+  - Serper: `FieldCure:Essentials:SerperApiKey`
+  - Tavily: `FieldCure:Essentials:TavilyApiKey`
+  - SerpApi: `FieldCure:Essentials:SerpApiApiKey`
+- CLI `--search-api-key` and `ESSENTIALS_SEARCH_API_KEY` still take priority (backwards compatible)
+- Improved error messages now show the engine-specific vault resource name
+
+---
+
 ## v0.6.0 (2026-04-04)
 
 ### New Features
