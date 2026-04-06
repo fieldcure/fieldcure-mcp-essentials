@@ -192,7 +192,13 @@ ESSENTIALS_SEARCH_ENGINE=serper ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-esse
 | Tavily | Authorization header (`Bearer` token) | Not in URL |
 | SerpApi | URL query parameter (`api_key=xxx`) | Visible in server logs |
 
-API keys can also be stored in Windows PasswordVault (`FieldCure:Essentials:SearchApiKey`) — never exposed via environment variables or CLI args.
+API keys can also be stored in Windows PasswordVault per engine — never exposed via environment variables or CLI args:
+
+| Engine | PasswordVault Resource |
+|--------|----------------------|
+| Serper | `FieldCure:Essentials:SerperApiKey` |
+| Tavily | `FieldCure:Essentials:TavilyApiKey` |
+| SerpApi | `FieldCure:Essentials:SerpApiApiKey` |
 
 ### Claude Desktop
 

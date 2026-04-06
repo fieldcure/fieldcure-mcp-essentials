@@ -54,8 +54,6 @@ return 0;
 static ISearchEngine ResolveSearchEngine(string[] args)
 {
     var engineName = ResolveArg(args, "--search-engine", "ESSENTIALS_SEARCH_ENGINE");
-    var apiKey = ResolveArg(args, "--search-api-key", "ESSENTIALS_SEARCH_API_KEY")
-                 ?? ReadFromPasswordVault("FieldCure:Essentials:SearchApiKey");
 
     if (engineName is null)
     {
@@ -63,6 +61,10 @@ static ISearchEngine ResolveSearchEngine(string[] args)
         // Automatically switches when one engine returns empty results (CAPTCHA).
         return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
     }
+
+    // CLI arg > env var > engine-specific PasswordVault key
+    var apiKey = ResolveArg(args, "--search-api-key", "ESSENTIALS_SEARCH_API_KEY")
+                 ?? ReadEngineApiKey(engineName);
 
     return CreateEngine(engineName, apiKey);
 }
@@ -83,6 +85,17 @@ static string? ResolveArg(string[] args, string cliFlag, string envVar)
 }
 
 /// <summary>
+/// Reads an API key from PasswordVault using an engine-specific resource name.
+/// </summary>
+static string? ReadEngineApiKey(string engineName) => engineName.ToLowerInvariant() switch
+{
+    "serper" => ReadFromPasswordVault("FieldCure:Essentials:SerperApiKey"),
+    "tavily" => ReadFromPasswordVault("FieldCure:Essentials:TavilyApiKey"),
+    "serpapi" => ReadFromPasswordVault("FieldCure:Essentials:SerpApiApiKey"),
+    _ => null,
+};
+
+/// <summary>
 /// Reads a credential from Windows Credential Manager (PasswordVault-compatible).
 /// </summary>
 static string? ReadFromPasswordVault(string resourceName, string userName = "default") =>
@@ -96,10 +109,10 @@ static ISearchEngine CreateEngine(string name, string? apiKey) => name.ToLowerIn
     "bing" => new BingSearchEngine(),
     "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
     "serper" => new SerperSearchEngine(apiKey ?? throw new ArgumentException(
-        "Serper requires --search-api-key or ESSENTIALS_SEARCH_API_KEY")),
+        "Serper requires --search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerperApiKey'")),
     "tavily" => new TavilySearchEngine(apiKey ?? throw new ArgumentException(
-        "Tavily requires --search-api-key or ESSENTIALS_SEARCH_API_KEY")),
+        "Tavily requires --search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:TavilyApiKey'")),
     "serpapi" => new SerpApiSearchEngine(apiKey ?? throw new ArgumentException(
-        "SerpApi requires --search-api-key or ESSENTIALS_SEARCH_API_KEY")),
+        "SerpApi requires --search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerpApiApiKey'")),
     _ => throw new ArgumentException($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi"),
 };
