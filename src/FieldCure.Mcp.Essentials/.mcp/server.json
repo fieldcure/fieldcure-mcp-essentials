@@ -1,0 +1,23 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/draft/2025-07-09/server.json",
+  "name": "io.github.fieldcure/essentials",
+  "description": "Essential MCP tools — HTTP, web search, shell, JavaScript, file I/O, environment info, and persistent memory.",
+  "packages": [
+    {
+      "registry_name": "nuget",
+      "name": "FieldCure.Mcp.Essentials",
+      "version": "0.6.0",
+      "runtime": "dotnet",
+      "source": "DotnetTool",
+      "command": "fieldcure-mcp-essentials",
+      "environment_variables": []
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/fieldcure/fieldcure-mcp-essentials",
+    "source": "github"
+  },
+  "version_detail": {
+    "version": "0.6.0"
+  }
+}

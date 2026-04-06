@@ -90,10 +90,34 @@ dotnet tool install -g FieldCure.Mcp.Essentials
 }
 ```
 
+### AssistStudio
+
+Settings > MCP Servers > **Add Server**:
+
+| Field | Value |
+|-------|-------|
+| **Name** | `Essentials` |
+| **Command** | `fieldcure-mcp-essentials` |
+| **Arguments** | *(empty)* |
+| **Environment** | *(none — search engine API keys are optional)* |
+| **Description** | *(auto-filled on first connection)* |
+
 ## Requirements
 
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) or later
 - No API keys needed for default Bing; optional API keys for Serper, Tavily, SerpApi
+
+## See Also — AssistStudio Ecosystem
+
+| Package | Description |
+|---------|-------------|
+| **[FieldCure.Mcp.Essentials](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)** | **HTTP, web search (Bing/Serper/Tavily), shell, JavaScript, file I/O, persistent memory** |
+| [FieldCure.Mcp.Outbox](https://www.nuget.org/packages/FieldCure.Mcp.Outbox) | Multi-channel messaging — Slack, Telegram, Email (SMTP/Graph), KakaoTalk |
+| [FieldCure.Mcp.Filesystem](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem) | Sandboxed file/directory operations with built-in document parsing (DOCX, HWPX, XLSX, PDF) |
+| [FieldCure.Mcp.Rag](https://www.nuget.org/packages/FieldCure.Mcp.Rag) | Document search — hybrid BM25 + vector retrieval, multi-KB, incremental indexing |
+| [FieldCure.Mcp.PublicData.Kr](https://www.nuget.org/packages/FieldCure.Mcp.PublicData.Kr) | Korean public data gateway — data.go.kr (80,000+ APIs) |
+| [FieldCure.AssistStudio.Runner](https://www.nuget.org/packages/FieldCure.AssistStudio.Runner) | Headless LLM task runner with scheduling via Windows Task Scheduler |
+| [FieldCure.AssistStudio](https://github.com/fieldcure/fieldcure-assiststudio) | Multi-provider AI workspace for Windows (WinUI 3) |
 
 ## Links
 

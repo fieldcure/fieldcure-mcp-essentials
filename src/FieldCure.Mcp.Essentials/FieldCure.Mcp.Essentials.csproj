@@ -19,11 +19,12 @@
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>mcp;essentials;http;web-search;serper;tavily;serpapi;shell;javascript;file-io</PackageTags>
+    <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
     <PackageReleaseNotes>v0.6.0: Optional API-based search engines (Serper, Tavily, SerpApi). Bing remains free default. Unified API key via CLI, env var, or PasswordVault.</PackageReleaseNotes>
 
+    <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>fieldcure-mcp-essentials</ToolCommandName>
   </PropertyGroup>
@@ -41,6 +42,7 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
     <None Include="Logo.png" Pack="true" PackagePath="" />
+    <None Include=".mcp/server.json" Pack="true" PackagePath=".mcp/" />
   </ItemGroup>
 
 </Project>
