@@ -280,7 +280,7 @@ dotnet pack src/FieldCure.Mcp.Essentials -c Release
 
 | Package | Description |
 |---------|-------------|
-| **[FieldCure.Mcp.Essentials](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)** | **HTTP, web search (Bing/Serper/Tavily), shell, JavaScript, file I/O, persistent memory** |
+| **[FieldCure.Mcp.Essentials](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)** | **HTTP, web search (Bing/Serper/Tavily/SerpApi), shell, JavaScript, file I/O, persistent memory** |
 | [FieldCure.Mcp.Outbox](https://www.nuget.org/packages/FieldCure.Mcp.Outbox) | Multi-channel messaging — Slack, Telegram, Email (SMTP/Graph), KakaoTalk |
 | [FieldCure.Mcp.Filesystem](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem) | Sandboxed file/directory operations with built-in document parsing (DOCX, HWPX, XLSX, PDF) |
 | [FieldCure.Mcp.Rag](https://www.nuget.org/packages/FieldCure.Mcp.Rag) | Document search — hybrid BM25 + vector retrieval, multi-KB, incremental indexing |
