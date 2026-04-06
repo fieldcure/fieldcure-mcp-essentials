@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using FieldCure.Mcp.Essentials.Http;
 using ModelContextProtocol.Server;
 using ReverseMarkdown;
@@ -10,6 +11,7 @@ namespace FieldCure.Mcp.Essentials.Tools;
 
 /// <summary>
 /// MCP tool that fetches a web page and extracts its content as Markdown.
+/// Supports HTML pages and binary documents (PDF, DOCX, HWPX, PPTX, XLSX).
 /// </summary>
 [McpServerToolType]
 public static class WebFetchTool
@@ -46,14 +48,19 @@ public static class WebFetchTool
         GithubFlavored = true,
     });
 
+    /// <summary>Default maximum character length for returned content.</summary>
     const int DefaultMaxLength = 5000;
+
+    /// <summary>Absolute upper bound for max_length parameter.</summary>
     const int AbsoluteMaxLength = 20000;
 
     /// <summary>
     /// Fetches a URL and extracts its main content as Markdown.
+    /// Binary documents (PDF, DOCX, HWPX, PPTX, XLSX) are parsed via Content-Type
+    /// with URL extension fallback for formats without standard Content-Type (e.g. HWPX).
     /// </summary>
     [McpServerTool(Name = "web_fetch")]
-    [Description("Fetch a web page URL and extract its main content as Markdown (headings, links, tables, code blocks preserved). Use this to read articles, documentation, or any web page.")]
+    [Description("Fetch a URL and extract content as Markdown. Supports web pages (HTML) and documents (PDF, DOCX, HWPX, PPTX, XLSX).")]
     public static async Task<string> WebFetch(
         [Description("URL to fetch (http or https)")]
         string url,
@@ -73,42 +80,18 @@ public static class WebFetchTool
 
             max_length = Math.Clamp(max_length, 100, AbsoluteMaxLength);
 
-            using var response = await SharedClient.GetAsync(uri, cancellationToken);
+            using var response = await SharedClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            var html = await response.Content.ReadAsStringAsync(cancellationToken);
+            // Route by Content-Type, with URL extension fallback (for HWPX etc.)
+            var contentType = response.Content.Headers.ContentType?.MediaType;
+            var docExtension = DocumentHelper.ContentTypeToExtension(contentType)
+                ?? DocumentHelper.UrlToExtension(url);
 
-            var reader = new Reader(url, html);
-            var article = await reader.GetArticleAsync();
+            if (docExtension is not null)
+                return await HandleDocument(response, url, contentType, docExtension, max_length, cancellationToken);
 
-            string text;
-            string? title = null;
-
-            if (article.IsReadable)
-            {
-                title = article.Title;
-                var cleanHtml = article.Content ?? "";
-                text = MdConverter.Convert(cleanHtml).Trim();
-            }
-            else
-            {
-                // Fallback: strip HTML tags roughly (Markdown conversion not possible)
-                text = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", " ");
-                text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ").Trim();
-            }
-
-            var truncated = text.Length > max_length;
-            if (truncated)
-                text = text[..max_length];
-
-            return JsonSerializer.Serialize(new
-            {
-                Url = url,
-                Title = title,
-                Content = text,
-                Length = text.Length,
-                Truncated = truncated ? true : (bool?)null,
-            }, JsonOptions);
+            return await HandleHtml(response, url, max_length, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -122,5 +105,70 @@ public static class WebFetchTool
         {
             return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
         }
+    }
+
+    /// <summary>
+    /// Reads the response as binary bytes and parses the document into Markdown.
+    /// </summary>
+    static async Task<string> HandleDocument(
+        HttpResponseMessage response, string url, string? contentType, string docExtension,
+        int maxLength, CancellationToken ct)
+    {
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+        var text = DocumentHelper.Parse(bytes, docExtension);
+
+        var truncated = text.Length > maxLength;
+        if (truncated)
+            text = text[..maxLength];
+
+        return JsonSerializer.Serialize(new
+        {
+            Url = url,
+            ContentType = contentType,
+            Content = text,
+            Length = text.Length,
+            Truncated = truncated ? true : (bool?)null,
+        }, JsonOptions);
+    }
+
+    /// <summary>
+    /// Reads the response as HTML, extracts article content via SmartReader,
+    /// and converts it to Markdown.
+    /// </summary>
+    static async Task<string> HandleHtml(
+        HttpResponseMessage response, string url, int maxLength, CancellationToken ct)
+    {
+        var html = await response.Content.ReadAsStringAsync(ct);
+
+        var reader = new Reader(url, html);
+        var article = await reader.GetArticleAsync();
+
+        string text;
+        string? title = null;
+
+        if (article.IsReadable)
+        {
+            title = article.Title;
+            var cleanHtml = article.Content ?? "";
+            text = MdConverter.Convert(cleanHtml).Trim();
+        }
+        else
+        {
+            text = Regex.Replace(html, "<[^>]+>", " ");
+            text = Regex.Replace(text, @"\s+", " ").Trim();
+        }
+
+        var truncated = text.Length > maxLength;
+        if (truncated)
+            text = text[..maxLength];
+
+        return JsonSerializer.Serialize(new
+        {
+            Url = url,
+            Title = title,
+            Content = text,
+            Length = text.Length,
+            Truncated = truncated ? true : (bool?)null,
+        }, JsonOptions);
     }
 }

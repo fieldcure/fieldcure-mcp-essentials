@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12 essential tools for any MCP client.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12 essential tools for any MCP client — web search, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory.
 
 ## Tools
 
@@ -8,16 +8,30 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 |------|-------------|
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection |
 | `web_search` | Search the web and return snippets (title, URL, description) |
-| `web_fetch` | Fetch a URL and extract content as Markdown with length limit |
+| `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) |
 | `run_command` | Shell command execution with timeout, working directory, and env vars |
 | `run_javascript` | Sandboxed JavaScript (Jint) — math, JSON, regex, data processing |
 | `get_environment` | System info — time, timezone, OS, hostname, username |
-| `read_file` | Text file reading with offset/limit for large files |
+| `read_file` | Read files — text with offset/limit, documents (PDF, DOCX, HWPX, PPTX, XLSX) parsed to Markdown |
 | `write_file` | File writing (overwrite/append) with auto directory creation |
 | `search_files` | File search by glob pattern and content (grep-like) |
 | `remember` | Store a key-value memory (persisted in SQLite) |
 | `forget` | Delete memories by key or keyword search |
 | `list_memories` | Search and list stored memories with FTS5 and pagination |
+
+## Document Parsing
+
+`web_fetch` and `read_file` can parse binary documents into Markdown:
+
+| Format | Extension | Detection |
+|--------|-----------|-----------|
+| PDF | `.pdf` | Content-Type / URL extension |
+| Word | `.docx` | Content-Type / URL extension |
+| Hangul (HWPX) | `.hwpx` | URL extension (no standard Content-Type) |
+| PowerPoint | `.pptx` | Content-Type / URL extension |
+| Excel | `.xlsx` | Content-Type / URL extension |
+
+Output includes headings, tables, math expressions (`[math: LaTeX]`), and slide/page separators.
 
 ## Web Search
 
@@ -111,8 +125,13 @@ Settings > MCP Servers > **Add Server**:
 
 ## Requirements
 
-- [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-- No API keys needed for default Bing; optional API keys for Serper, Tavily, SerpApi
+- [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+## Optional
+
+Works out of the box with no additional dependencies.
+If available on your system, `run_command` can leverage tools like
+Node.js, Python, Git, Docker, and any other CLI tools.
 
 ## See Also — AssistStudio Ecosystem
 

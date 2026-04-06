@@ -7,7 +7,8 @@ using ModelContextProtocol.Server;
 namespace FieldCure.Mcp.Essentials.Tools;
 
 /// <summary>
-/// MCP tool that reads text file content with offset and line limit support.
+/// MCP tool that reads file content with offset and line limit support.
+/// Supports text files and binary documents (PDF, DOCX, HWPX, PPTX, XLSX).
 /// </summary>
 [McpServerToolType]
 public static class ReadFileTool
@@ -23,19 +24,33 @@ public static class ReadFileTool
     };
 
     /// <summary>
-    /// Reads a text file and returns its content as JSON.
+    /// Default maximum character length for document content.
+    /// </summary>
+    const int DefaultDocMaxLength = 5000;
+
+    /// <summary>
+    /// Absolute upper bound for max_length parameter on documents.
+    /// </summary>
+    const int AbsoluteDocMaxLength = 20000;
+
+    /// <summary>
+    /// Reads a file and returns its content as JSON.
+    /// Binary documents (PDF, DOCX, HWPX, PPTX, XLSX) are parsed into Markdown.
+    /// Text files are read with offset/max_lines pagination.
     /// </summary>
     [McpServerTool(Name = "read_file")]
-    [Description("Read text file content. Supports offset and max_lines for large files. Returns line count and truncation status.")]
+    [Description("Read a file. Text files support offset/max_lines pagination. Documents (PDF, DOCX, HWPX, PPTX, XLSX) are parsed into Markdown.")]
     public static async Task<string> ReadFile(
         [Description("File path (absolute or relative to working directory)")]
         string path,
-        [Description("File encoding (default: utf-8)")]
+        [Description("File encoding for text files (default: utf-8)")]
         string? encoding = "utf-8",
-        [Description("Maximum lines to read (default: 1000)")]
+        [Description("Maximum lines to read for text files (default: 1000)")]
         int max_lines = 1000,
-        [Description("Start line number, 0-based (default: 0)")]
+        [Description("Start line number for text files, 0-based (default: 0)")]
         int offset = 0,
+        [Description("Maximum character length for document output (default: 5000, max: 20000)")]
+        int max_length = DefaultDocMaxLength,
         CancellationToken cancellationToken = default)
     {
         try
@@ -45,40 +60,74 @@ public static class ReadFileTool
             if (!File.Exists(fullPath))
                 return JsonSerializer.Serialize(new { error = $"File not found: {fullPath}" }, JsonOptions);
 
-            var enc = GetEncoding(encoding ?? "utf-8");
+            var extension = Path.GetExtension(fullPath);
 
-            // Check for binary file (first 8KB)
-            var sample = new byte[Math.Min(8192, new FileInfo(fullPath).Length)];
-            using (var fs = File.OpenRead(fullPath))
-            {
-                _ = await fs.ReadAsync(sample.AsMemory(0, sample.Length), cancellationToken);
-            }
-            if (Array.IndexOf(sample, (byte)0) >= 0)
-                return JsonSerializer.Serialize(new { error = "Binary file detected. Use a specialized tool for binary files." }, JsonOptions);
+            if (DocumentHelper.IsBinaryDocument(extension))
+                return await HandleDocument(fullPath, extension, max_length, cancellationToken);
 
-            var allLines = await File.ReadAllLinesAsync(fullPath, enc, cancellationToken);
-            var totalLines = allLines.Length;
-
-            offset = Math.Clamp(offset, 0, Math.Max(0, totalLines - 1));
-            max_lines = Math.Clamp(max_lines, 1, 10_000);
-
-            var selectedLines = allLines.Skip(offset).Take(max_lines).ToArray();
-            var truncated = offset + max_lines < totalLines;
-
-            var result = new
-            {
-                Content = string.Join('\n', selectedLines),
-                LinesRead = selectedLines.Length,
-                TotalLines = totalLines,
-                Truncated = truncated,
-            };
-
-            return JsonSerializer.Serialize(result, JsonOptions);
+            return await HandleText(fullPath, encoding ?? "utf-8", max_lines, offset, cancellationToken);
         }
         catch (Exception ex)
         {
             return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
         }
+    }
+
+    /// <summary>
+    /// Reads a binary document file and parses it into Markdown via DocumentHelper.
+    /// </summary>
+    static async Task<string> HandleDocument(string fullPath, string extension, int maxLength, CancellationToken ct)
+    {
+        maxLength = Math.Clamp(maxLength, 100, AbsoluteDocMaxLength);
+        var bytes = await File.ReadAllBytesAsync(fullPath, ct);
+        var text = DocumentHelper.Parse(bytes, extension);
+
+        var truncated = text.Length > maxLength;
+        if (truncated)
+            text = text[..maxLength];
+
+        return JsonSerializer.Serialize(new
+        {
+            Content = text,
+            Format = extension.TrimStart('.'),
+            Length = text.Length,
+            Truncated = truncated ? true : (bool?)null,
+        }, JsonOptions);
+    }
+
+    /// <summary>
+    /// Reads a text file with encoding, offset, and line limit support.
+    /// </summary>
+    static async Task<string> HandleText(string fullPath, string encoding, int maxLines, int offset, CancellationToken ct)
+    {
+        var enc = GetEncoding(encoding);
+
+        // Check for binary file (first 8KB)
+        var fileLength = new FileInfo(fullPath).Length;
+        var sample = new byte[Math.Min(8192, fileLength)];
+        using (var fs = File.OpenRead(fullPath))
+        {
+            _ = await fs.ReadAsync(sample.AsMemory(0, sample.Length), ct);
+        }
+        if (Array.IndexOf(sample, (byte)0) >= 0)
+            return JsonSerializer.Serialize(new { error = "Binary file detected. Use a specialized tool for binary files." }, JsonOptions);
+
+        var allLines = await File.ReadAllLinesAsync(fullPath, enc, ct);
+        var totalLines = allLines.Length;
+
+        offset = Math.Clamp(offset, 0, Math.Max(0, totalLines - 1));
+        maxLines = Math.Clamp(maxLines, 1, 10_000);
+
+        var selectedLines = allLines.Skip(offset).Take(maxLines).ToArray();
+        var truncated = offset + maxLines < totalLines;
+
+        return JsonSerializer.Serialize(new
+        {
+            Content = string.Join('\n', selectedLines),
+            LinesRead = selectedLines.Length,
+            TotalLines = totalLines,
+            Truncated = truncated,
+        }, JsonOptions);
     }
 
     /// <summary>
