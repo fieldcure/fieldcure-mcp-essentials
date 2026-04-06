@@ -111,18 +111,6 @@ dotnet tool install -g FieldCure.Mcp.Essentials
 }
 ```
 
-### AssistStudio
-
-Settings > MCP Servers > **Add Server**:
-
-| Field | Value |
-|-------|-------|
-| **Name** | `Essentials` |
-| **Command** | `fieldcure-mcp-essentials` |
-| **Arguments** | *(empty)* |
-| **Environment** | *(none — search engine API keys are optional)* |
-| **Description** | *(auto-filled on first connection)* |
-
 ## Requirements
 
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)

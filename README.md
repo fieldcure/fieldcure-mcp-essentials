@@ -83,18 +83,6 @@ Add to `.vscode/mcp.json`:
 }
 ```
 
-### AssistStudio
-
-Settings > MCP Servers > **Add Server**:
-
-| Field | Value |
-|-------|-------|
-| **Name** | `Essentials` |
-| **Command** | `fieldcure-mcp-essentials` |
-| **Arguments** | *(empty)* |
-| **Environment** | *(none — search engine API keys are optional)* |
-| **Description** | *(auto-filled on first connection)* |
-
 ## Tools
 
 | Tool | Description | Destructive |
