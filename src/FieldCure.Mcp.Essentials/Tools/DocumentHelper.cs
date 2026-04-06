@@ -17,6 +17,9 @@ internal static class DocumentHelper
         ".pdf", ".docx", ".hwpx", ".pptx", ".xlsx"
     };
 
+    /// <summary>
+    /// Registers the PDF parser with DocumentParserFactory on first use.
+    /// </summary>
     static DocumentHelper()
     {
         DocumentParserFactoryExtensions.AddPdfSupport();

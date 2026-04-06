@@ -1,5 +1,30 @@
 # Release Notes
 
+## v1.0.0 (2026-04-06)
+
+### New Features
+
+- **Document parsing** — `web_fetch` and `read_file` now parse binary documents into Markdown
+  - Supported formats: PDF, DOCX, HWPX, PPTX, XLSX
+  - `web_fetch`: routes by Content-Type with URL extension fallback (for HWPX)
+  - `read_file`: routes by file extension, adds `max_length` parameter for document output
+  - Shared logic in `DocumentHelper` — no code duplication between tools
+- Output preserves headings, tables, math expressions (`[math: LaTeX]`), and page/slide separators
+
+### Changed
+
+- `web_fetch` description updated to reflect document support
+- `read_file` description updated to reflect document support
+- README: added Document Parsing section, Requirements, and Optional sections
+- Package tags updated with `document-parsing`, `pdf`, `docx`
+
+### Dependencies
+
+- Added `FieldCure.DocumentParsers` 1.x
+- Added `FieldCure.DocumentParsers.Pdf` 1.x
+
+---
+
 ## v0.7.1 (2026-04-06)
 
 ### Fixed
