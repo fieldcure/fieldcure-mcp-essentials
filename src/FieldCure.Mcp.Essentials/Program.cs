@@ -34,6 +34,8 @@ builder.Services
         options.ServerInfo = new()
         {
             Name = "fieldcure-mcp-essentials",
+            Title = "FieldCure Essentials",
+            Description = "HTTP, web search, shell, JavaScript, file I/O, persistent memory",
             Version = typeof(Program).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "0.0.0",
