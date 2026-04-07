@@ -2,9 +2,11 @@ using System.Reflection;
 using FieldCure.Mcp.Essentials;
 using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
+using FieldCure.Mcp.Essentials.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 
 // Default CWD to user home when launched by a host app (e.g., AssistStudio)
 // to avoid running in System32 or other system directories.
@@ -27,8 +29,11 @@ builder.Logging.AddConsole(options =>
 });
 
 builder.Services
-    .AddSingleton(new MemoryStore(memoryPath))
-    .AddSingleton<ISearchEngine>(searchEngine)
+    .AddSingleton(new MemoryStore(memoryPath));
+
+builder.Services.AddSingleton<ISearchEngine>(searchEngine);
+
+var mcpBuilder = builder.Services
     .AddMcpServer(options =>
     {
         options.ServerInfo = new()
@@ -42,7 +47,16 @@ builder.Services
         };
     })
     .WithStdioServerTransport()
-    .WithToolsFromAssembly();
+    .WithToolsFromAssembly();  // 12 static tools (attribute-based)
+
+// v1.1: Register category search tools dynamically based on engine capabilities.
+// Tools and descriptions are determined at startup — no runtime changes needed
+// since stdio MCP servers restart on engine changes.
+if (searchEngine is ICategorySearchEngine categoryEngine)
+{
+    builder.Services.AddSingleton<ICategorySearchEngine>(categoryEngine);
+    RegisterCategoryTools(mcpBuilder, categoryEngine);
+}
 
 var app = builder.Build();
 await app.RunAsync();
@@ -133,4 +147,54 @@ static ISearchEngine LogAndFallback(string message, ISearchEngine fallback)
 {
     Console.Error.WriteLine($"[Warning] {message} — falling back to Bing/DuckDuckGo.");
     return fallback;
+}
+
+/// <summary>
+/// Registers category search tools (news, images, scholar, patents) based on engine capabilities.
+/// Each tool gets an engine-specific description via McpServerToolCreateOptions.
+/// </summary>
+static void RegisterCategoryTools(IMcpServerBuilder mcpBuilder, ICategorySearchEngine engine)
+{
+    var cats = engine.SupportedCategories;
+    var name = engine.EngineName;
+    var tools = new List<McpServerTool>();
+
+    if (cats.Contains(SearchCategory.News))
+        tools.Add(McpServerTool.Create(
+            CategorySearchTools.SearchNews,
+            new McpServerToolCreateOptions
+            {
+                Name = "search_news",
+                Description = CategorySearchDescriptions.News(name),
+            }));
+
+    if (cats.Contains(SearchCategory.Images))
+        tools.Add(McpServerTool.Create(
+            CategorySearchTools.SearchImages,
+            new McpServerToolCreateOptions
+            {
+                Name = "search_images",
+                Description = CategorySearchDescriptions.Images(name),
+            }));
+
+    if (cats.Contains(SearchCategory.Scholar))
+        tools.Add(McpServerTool.Create(
+            CategorySearchTools.SearchScholar,
+            new McpServerToolCreateOptions
+            {
+                Name = "search_scholar",
+                Description = CategorySearchDescriptions.Scholar(name),
+            }));
+
+    if (cats.Contains(SearchCategory.Patents))
+        tools.Add(McpServerTool.Create(
+            CategorySearchTools.SearchPatents,
+            new McpServerToolCreateOptions
+            {
+                Name = "search_patents",
+                Description = CategorySearchDescriptions.Patents(name),
+            }));
+
+    if (tools.Count > 0)
+        mcpBuilder.WithTools(tools);
 }
