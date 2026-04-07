@@ -37,7 +37,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.*" />
     <PackageReference Include="FieldCure.DocumentParsers" Version="1.*" />
     <PackageReference Include="FieldCure.DocumentParsers.Pdf" Version="1.*" />
-    <PackageReference Include="ReverseMarkdown" Version="4.*" />
+    <PackageReference Include="ReverseMarkdown" Version="5.*" />
     <PackageReference Include="SmartReader" Version="0.11.0" />
   </ItemGroup>
 

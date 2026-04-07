@@ -73,6 +73,11 @@ static ISearchEngine ResolveSearchEngine(string[] args)
 
     if (engineName is null)
     {
+        // Auto-detect: scan PasswordVault for paid engine API keys
+        var detected = DetectEngineFromVault();
+        if (detected is not null)
+            return detected;
+
         // Default: fallback engine (Bing primary, DDG secondary).
         // Automatically switches when one engine returns empty results (CAPTCHA).
         return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
@@ -98,6 +103,32 @@ static string? ResolveArg(string[] args, string cliFlag, string envVar)
 
     var env = Environment.GetEnvironmentVariable(envVar);
     return string.IsNullOrWhiteSpace(env) ? null : env;
+}
+
+/// <summary>
+/// Scans PasswordVault for paid search engine API keys and returns the first match.
+/// Priority: Serper → Tavily → SerpApi.
+/// </summary>
+static ISearchEngine? DetectEngineFromVault()
+{
+    (string Name, string VaultKey)[] engines =
+    [
+        ("serper", "FieldCure:Essentials:SerperApiKey"),
+        ("tavily", "FieldCure:Essentials:TavilyApiKey"),
+        ("serpapi", "FieldCure:Essentials:SerpApiApiKey"),
+    ];
+
+    foreach (var (name, vaultKey) in engines)
+    {
+        var apiKey = ReadFromPasswordVault(vaultKey);
+        if (apiKey is not null)
+        {
+            Console.Error.WriteLine($"[Info] Auto-detected search engine '{name}' from PasswordVault.");
+            return CreateEngine(name, apiKey);
+        }
+    }
+
+    return null;
 }
 
 /// <summary>
