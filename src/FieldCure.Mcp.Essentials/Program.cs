@@ -40,7 +40,9 @@ var mcpBuilder = builder.Services
         {
             Name = "fieldcure-mcp-essentials",
             Title = "FieldCure Essentials",
-            Description = "HTTP, web search, shell, JavaScript, file I/O, persistent memory",
+            Description = searchEngine is ICategorySearchEngine cat
+                ? $"HTTP, web search (+ {string.Join(", ", cat.SupportedCategories.Select(c => c.ToString().ToLowerInvariant()))}), shell, JavaScript, file I/O, persistent memory"
+                : "HTTP, web search, shell, JavaScript, file I/O, persistent memory",
             Version = typeof(Program).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "0.0.0",
@@ -159,41 +161,38 @@ static void RegisterCategoryTools(IMcpServerBuilder mcpBuilder, ICategorySearchE
     var name = engine.EngineName;
     var tools = new List<McpServerTool>();
 
+    // Build a temporary IServiceProvider so the SDK recognizes ICategorySearchEngine
+    // as a DI-injected parameter and excludes it from the tool's JSON schema.
+    var services = new ServiceCollection()
+        .AddSingleton<ICategorySearchEngine>(engine)
+        .BuildServiceProvider();
+
+    McpServerToolCreateOptions Options(string toolName, string description) => new()
+    {
+        Name = toolName,
+        Description = description,
+        Services = services,
+    };
+
     if (cats.Contains(SearchCategory.News))
         tools.Add(McpServerTool.Create(
             CategorySearchTools.SearchNews,
-            new McpServerToolCreateOptions
-            {
-                Name = "search_news",
-                Description = CategorySearchDescriptions.News(name),
-            }));
+            Options("search_news", CategorySearchDescriptions.News(name))));
 
     if (cats.Contains(SearchCategory.Images))
         tools.Add(McpServerTool.Create(
             CategorySearchTools.SearchImages,
-            new McpServerToolCreateOptions
-            {
-                Name = "search_images",
-                Description = CategorySearchDescriptions.Images(name),
-            }));
+            Options("search_images", CategorySearchDescriptions.Images(name))));
 
     if (cats.Contains(SearchCategory.Scholar))
         tools.Add(McpServerTool.Create(
             CategorySearchTools.SearchScholar,
-            new McpServerToolCreateOptions
-            {
-                Name = "search_scholar",
-                Description = CategorySearchDescriptions.Scholar(name),
-            }));
+            Options("search_scholar", CategorySearchDescriptions.Scholar(name))));
 
     if (cats.Contains(SearchCategory.Patents))
         tools.Add(McpServerTool.Create(
             CategorySearchTools.SearchPatents,
-            new McpServerToolCreateOptions
-            {
-                Name = "search_patents",
-                Description = CategorySearchDescriptions.Patents(name),
-            }));
+            Options("search_patents", CategorySearchDescriptions.Patents(name))));
 
     if (tools.Count > 0)
         mcpBuilder.WithTools(tools);

@@ -8,13 +8,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
     <Company>Fieldcure Co., Ltd.</Company>
     <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
-    <Description>Essential MCP tools — web search, web/document fetching (PDF, DOCX, HWPX, PPTX, XLSX), shell, JavaScript sandbox, file I/O, and persistent memory for any MCP client.</Description>
+    <Description>Essential MCP tools — web search (news/images/scholar/patents with SerpApi or Serper), web/document fetching (PDF, DOCX, HWPX, PPTX, XLSX), shell, JavaScript sandbox, file I/O, and persistent memory for any MCP client.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</RepositoryUrl>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.0.0: Document parsing — web_fetch and read_file now parse PDF, DOCX, HWPX, PPTX, XLSX into Markdown.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.1.0: Dynamic category search — search_news, search_images, search_scholar, search_patents auto-registered when SerpApi or Serper is active.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>

@@ -1,5 +1,23 @@
 # Release Notes
 
+## v1.1.0 (2026-04-07)
+
+### New Features
+
+- **Dynamic category search tools** — `search_news`, `search_images`, `search_scholar`, `search_patents` auto-registered when SerpApi or Serper is active
+  - Tavily: `search_news` only (API limitation)
+  - Tools and descriptions are determined at startup based on engine capabilities
+  - `engine` parameter not exposed — injected via DI, transparent to the user
+- **Dynamic server description** — `serverInfo.description` reflects active category tools (e.g. `+ news, images, scholar, patents`)
+
+### Changed
+
+- Server description now dynamically includes available category names
+- `.mcp/server.json` and NuGet description updated to mention category search
+- Tool count: 12 static + up to 4 dynamic (16 max with SerpApi/Serper)
+
+---
+
 ## v1.0.0 (2026-04-06)
 
 ### New Features

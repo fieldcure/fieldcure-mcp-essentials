@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12 essential tools for any MCP client — web search, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12–16 essential tools for any MCP client — web search, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered.
 
 ## Tools
 
@@ -18,6 +18,15 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `remember` | Store a key-value memory (persisted in SQLite) |
 | `forget` | Delete memories by key or keyword search |
 | `list_memories` | Search and list stored memories with FTS5 and pagination |
+
+### Category Search (dynamic — SerpApi / Serper)
+
+| Tool | Description | SerpApi | Serper | Tavily |
+|------|-------------|:-------:|:------:|:------:|
+| `search_news` | Search recent news articles via Google News | Yes | Yes | Yes |
+| `search_images` | Search images with size/type filtering | Yes | Yes | — |
+| `search_scholar` | Search academic papers with citation counts | Yes | Yes | — |
+| `search_patents` | Search patent documents with inventor/assignee filtering | Yes | Yes | — |
 
 ## Document Parsing
 
@@ -121,17 +130,9 @@ Works out of the box with no additional dependencies.
 If available on your system, `run_command` can leverage tools like
 Node.js, Python, Git, Docker, and any other CLI tools.
 
-## See Also — AssistStudio Ecosystem
+## See Also
 
-| Package | Description |
-|---------|-------------|
-| **[FieldCure.Mcp.Essentials](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)** | **Web search, web/document fetching (PDF, DOCX, HWPX, PPTX, XLSX), shell, JavaScript, file I/O, persistent memory** |
-| [FieldCure.Mcp.Outbox](https://www.nuget.org/packages/FieldCure.Mcp.Outbox) | Multi-channel messaging — Slack, Telegram, Email (SMTP/Graph), KakaoTalk |
-| [FieldCure.Mcp.Filesystem](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem) | Sandboxed file/directory operations with built-in document parsing (DOCX, HWPX, XLSX, PDF) |
-| [FieldCure.Mcp.Rag](https://www.nuget.org/packages/FieldCure.Mcp.Rag) | Document search — hybrid BM25 + vector retrieval, multi-KB, incremental indexing |
-| [FieldCure.Mcp.PublicData.Kr](https://www.nuget.org/packages/FieldCure.Mcp.PublicData.Kr) | Korean public data gateway — data.go.kr (80,000+ APIs) |
-| [FieldCure.AssistStudio.Runner](https://www.nuget.org/packages/FieldCure.AssistStudio.Runner) | Headless LLM task runner with scheduling via Windows Task Scheduler |
-| [FieldCure.AssistStudio](https://github.com/fieldcure/fieldcure-assiststudio) | Multi-provider AI workspace for Windows (WinUI 3) |
+Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#ecosystem).
 
 ## Links
 

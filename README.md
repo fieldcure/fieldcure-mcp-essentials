@@ -3,12 +3,12 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 12 essential tools — HTTP requests, web search & fetch, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 12–16 essential tools — HTTP requests, web search & fetch, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **12 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory
-- **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi
+- **12–16 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + dynamic category search (news, images, scholar, patents) with SerpApi or Serper
+- **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi (+ category search tools)
 - **Web search & fetch** — Bing (default, free) with optional API-based engines (Serper, Tavily, SerpApi), plus readable text extraction from any URL
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
@@ -100,6 +100,17 @@ Add to `.vscode/mcp.json`:
 | `forget` | Delete memories by key or keyword search | Yes |
 | `list_memories` | Search and list stored memories with FTS5 and pagination | — |
 
+### Category Search (dynamic — SerpApi / Serper)
+
+These tools are auto-registered at startup when a category-capable engine is active:
+
+| Tool | Description | SerpApi | Serper | Tavily |
+|------|-------------|:-------:|:------:|:------:|
+| `search_news` | Search recent news articles via Google News | Yes | Yes | Yes |
+| `search_images` | Search images with size/type filtering | Yes | Yes | — |
+| `search_scholar` | Search academic papers with citation counts | Yes | Yes | — |
+| `search_patents` | Search patent documents with inventor/assignee filtering | Yes | Yes | — |
+
 ### `web_search` vs `web_fetch` vs `http_request`
 
 | | `http_request` | `web_search` | `web_fetch` |
@@ -108,10 +119,6 @@ Add to `.vscode/mcp.json`:
 | Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Markdown (body only) |
 | Conversion | None | None | SmartReader HTML → Markdown |
 | Length limit | None | `max_results` (max 10) | `max_length` (max 20000) |
-
-### Filesystem Overlap
-
-`read_file`, `write_file`, and `search_files` overlap with the [FieldCure MCP Filesystem](https://github.com/fieldcure/fieldcure-mcp-filesystem) server. When both are connected, the MCP client routes to Filesystem (which has sandboxing, atomic writes, and document parsing). With Essentials alone, the lightweight built-in versions handle basic file I/O.
 
 ## JavaScript Sandbox
 
@@ -216,7 +223,7 @@ Use the `region` parameter for localized results:
 { "query": "Python tutorial" }
 ```
 
-Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA.
+Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA. Free engines rely on scraping and may be intermittent — **an API-based engine is strongly recommended for any non-trivial use.**
 If a paid engine is selected but the API key is missing, a warning is logged to stderr and the server falls back to Bing/DuckDuckGo automatically.
 
 ## Project Structure
@@ -230,17 +237,20 @@ src/FieldCure.Mcp.Essentials/
 │   └── MemoryStore.cs          # SQLite + FTS5 memory storage
 ├── Search/
 │   ├── ISearchEngine.cs        # Search engine interface
+│   ├── ICategorySearchEngine.cs # Category search interface (news, images, scholar, patents)
 │   ├── SearchResult.cs         # Search result record
 │   ├── BingSearchEngine.cs     # Bing scraping (default)
 │   ├── DuckDuckGoSearchEngine.cs  # DuckDuckGo lite scraping
 │   ├── FallbackSearchEngine.cs # Auto-rotate on CAPTCHA
-│   ├── SerperSearchEngine.cs   # Serper.dev API
-│   ├── TavilySearchEngine.cs   # Tavily API
-│   └── SerpApiSearchEngine.cs  # SerpApi API
+│   ├── SerperSearchEngine.cs   # Serper.dev API (+ category search)
+│   ├── TavilySearchEngine.cs   # Tavily API (+ news)
+│   └── SerpApiSearchEngine.cs  # SerpApi API (+ category search)
 └── Tools/
     ├── HttpRequestTool.cs      # http_request
     ├── WebSearchTool.cs        # web_search
     ├── WebFetchTool.cs         # web_fetch (SmartReader)
+    ├── CategorySearchTools.cs  # search_news / search_images / search_scholar / search_patents
+    ├── CategorySearchDescriptions.cs  # Per-engine tool descriptions
     ├── RunCommandTool.cs       # run_command
     ├── RunJavaScriptTool.cs    # run_javascript (Jint sandbox)
     ├── GetEnvironmentTool.cs   # get_environment
@@ -263,35 +273,9 @@ dotnet test
 dotnet pack src/FieldCure.Mcp.Essentials -c Release
 ```
 
-## See Also — AssistStudio Ecosystem
+## See Also
 
-### MCP Servers
-
-| Package | Description |
-|---------|-------------|
-| **[FieldCure.Mcp.Essentials](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)** | **HTTP, web search (Bing/Serper/Tavily/SerpApi), shell, JavaScript, file I/O, persistent memory** |
-| [FieldCure.Mcp.Outbox](https://www.nuget.org/packages/FieldCure.Mcp.Outbox) | Multi-channel messaging — Slack, Telegram, Email (SMTP/Graph), KakaoTalk |
-| [FieldCure.Mcp.Filesystem](https://www.nuget.org/packages/FieldCure.Mcp.Filesystem) | Sandboxed file/directory operations with built-in document parsing (DOCX, HWPX, XLSX, PDF) |
-| [FieldCure.Mcp.Rag](https://www.nuget.org/packages/FieldCure.Mcp.Rag) | Document search — hybrid BM25 + vector retrieval, multi-KB, incremental indexing |
-| [FieldCure.Mcp.PublicData.Kr](https://www.nuget.org/packages/FieldCure.Mcp.PublicData.Kr) | Korean public data gateway — data.go.kr (80,000+ APIs) |
-| [FieldCure.AssistStudio.Runner](https://www.nuget.org/packages/FieldCure.AssistStudio.Runner) | Headless LLM task runner with scheduling via Windows Task Scheduler |
-
-### Libraries
-
-| Package | Description |
-|---------|-------------|
-| [FieldCure.Ai.Providers](https://www.nuget.org/packages/FieldCure.Ai.Providers) | Multi-provider AI client — Claude, OpenAI, Gemini, Ollama, Groq with streaming and tool use |
-| [FieldCure.Ai.Execution](https://www.nuget.org/packages/FieldCure.Ai.Execution) | Agent loop and sub-agent execution engine for autonomous tool-use workflows |
-| [FieldCure.AssistStudio.Core](https://www.nuget.org/packages/FieldCure.AssistStudio.Core) | MCP server management, tool orchestration, and conversation persistence |
-| [FieldCure.AssistStudio.Controls.WinUI](https://www.nuget.org/packages/FieldCure.AssistStudio.Controls.WinUI) | WinUI 3 chat UI controls — WebView2 rendering, streaming, conversation branching |
-| [FieldCure.DocumentParsers](https://www.nuget.org/packages/FieldCure.DocumentParsers) | Document text extraction — DOCX, HWPX, XLSX, PPTX with math-to-LaTeX |
-| [FieldCure.DocumentParsers.Pdf](https://www.nuget.org/packages/FieldCure.DocumentParsers.Pdf) | PDF text extraction add-on for DocumentParsers |
-
-### App
-
-| Package | Description |
-|---------|-------------|
-| [FieldCure.AssistStudio](https://github.com/fieldcure/fieldcure-assiststudio) | Multi-provider AI workspace for Windows (WinUI 3) |
+Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#ecosystem).
 
 ## License
 
