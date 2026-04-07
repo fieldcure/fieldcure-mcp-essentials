@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.1.0: Dynamic category search — search_news, search_images, search_scholar, search_patents auto-registered when SerpApi or Serper is active.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.2.0: Auto-detect search engine from PasswordVault; ReverseMarkdown 5.* upgrade.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>

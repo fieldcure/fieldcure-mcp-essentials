@@ -114,8 +114,8 @@ static ISearchEngine? DetectEngineFromVault()
     (string Name, string VaultKey)[] engines =
     [
         ("serper", "FieldCure:Essentials:SerperApiKey"),
-        ("tavily", "FieldCure:Essentials:TavilyApiKey"),
         ("serpapi", "FieldCure:Essentials:SerpApiApiKey"),
+        ("tavily", "FieldCure:Essentials:TavilyApiKey"),
     ];
 
     foreach (var (name, vaultKey) in engines)

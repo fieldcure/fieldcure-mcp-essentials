@@ -61,13 +61,13 @@ fieldcure-mcp-essentials --search-engine serper --search-api-key YOUR_KEY
 ESSENTIALS_SEARCH_ENGINE=tavily ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-essentials
 ```
 
-API keys can also be stored in Windows PasswordVault per engine:
+API keys can also be stored in Windows PasswordVault per engine (auto-detected when `--search-engine` is omitted):
 
 | Engine | PasswordVault Resource |
 |--------|----------------------|
 | Serper | `FieldCure:Essentials:SerperApiKey` |
-| Tavily | `FieldCure:Essentials:TavilyApiKey` |
 | SerpApi | `FieldCure:Essentials:SerpApiApiKey` |
+| Tavily | `FieldCure:Essentials:TavilyApiKey` |
 
 Use the `region` parameter for localized results:
 

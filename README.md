@@ -1,4 +1,4 @@
-# FieldCure MCP Essentials
+﻿# FieldCure MCP Essentials
 
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
@@ -9,15 +9,13 @@ Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcont
 
 - **12–16 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + dynamic category search (news, images, scholar, patents) with SerpApi or Serper
 - **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi (+ category search tools)
-- **Web search & fetch** — Bing (default, free) with optional API-based engines (Serper, Tavily, SerpApi), plus readable text extraction from any URL
+- **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
 - **Cross-client** — works with Claude Desktop, VS Code, AssistStudio, and any MCP-compatible client
 - **Stdio transport** — standard MCP subprocess model via JSON-RPC over stdin/stdout
 
 ## Installation
-
-### dotnet tool (recommended)
 
 ```bash
 dotnet tool install -g FieldCure.Mcp.Essentials
@@ -33,55 +31,9 @@ cd fieldcure-mcp-essentials
 dotnet build
 ```
 
-## Requirements
+### Requirements
 
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-
-## Configuration
-
-### Claude Desktop
-
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "essentials": {
-      "command": "fieldcure-mcp-essentials"
-    }
-  }
-}
-```
-
-### VS Code (Copilot)
-
-Add to `.vscode/mcp.json`:
-
-```json
-{
-  "servers": {
-    "essentials": {
-      "command": "fieldcure-mcp-essentials"
-    }
-  }
-}
-```
-
-### From source (without dotnet tool)
-
-```json
-{
-  "mcpServers": {
-    "essentials": {
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project", "C:\\path\\to\\fieldcure-mcp-essentials\\src\\FieldCure.Mcp.Essentials"
-      ]
-    }
-  }
-}
-```
 
 ## Tools
 
@@ -89,11 +41,11 @@ Add to `.vscode/mcp.json`:
 |------|-------------|:-----------:|
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with custom headers and body | — |
 | `web_search` | Search the web and return snippets (title, URL, description) | — |
-| `web_fetch` | Fetch a URL and extract content as Markdown with length limit | — |
+| `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) | — |
 | `run_command` | Execute shell commands with working directory and environment variables | Yes |
 | `run_javascript` | Sandboxed JavaScript execution (Jint) for math, data processing, JSON, regex | — |
 | `get_environment` | System info — local time, timezone, OS, hostname, username, .NET version | — |
-| `read_file` | Read text files with offset and line limit for large files | — |
+| `read_file` | Read files — text with offset/limit, documents (PDF, DOCX, HWPX, PPTX, XLSX) parsed to Markdown | — |
 | `write_file` | Write or append text to files with auto directory creation | Yes |
 | `search_files` | Search files by glob pattern and content (grep-like) | — |
 | `remember` | Store a key-value memory (persisted in SQLite) | — |
@@ -119,6 +71,80 @@ These tools are auto-registered at startup when a category-capable engine is act
 | Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Markdown (body only) |
 | Conversion | None | None | SmartReader HTML → Markdown |
 | Length limit | None | `max_results` (max 10) | `max_length` (max 20000) |
+
+## Document Parsing
+
+`web_fetch` and `read_file` can parse binary documents into Markdown:
+
+| Format | Extension | Detection |
+|--------|-----------|-----------|
+| PDF | `.pdf` | Content-Type / URL extension |
+| Word | `.docx` | Content-Type / URL extension |
+| Hangul (HWPX) | `.hwpx` | URL extension (no standard Content-Type) |
+| PowerPoint | `.pptx` | Content-Type / URL extension |
+| Excel | `.xlsx` | Content-Type / URL extension |
+
+Output includes headings, tables, math expressions (`[math: LaTeX]`), and slide/page separators.
+
+## Web Search
+
+Default engine is Bing (free, no API key needed). For more reliable results, use an API-based engine:
+
+| Engine | Free Tier | Category Search | API Key |
+|--------|-----------|:---------------:|---------|
+| Bing (default) | Unlimited (scraping) | — | Not needed |
+| Serper | 2,500 one-time | news, images, scholar, patents | [serper.dev](https://serper.dev) |
+| SerpApi | 100/month | news, images, scholar, patents | [serpapi.com](https://serpapi.com) |
+| Tavily | 1,000/month | news | [tavily.com](https://tavily.com) |
+
+```bash
+# Use Serper
+fieldcure-mcp-essentials --search-engine serper --search-api-key YOUR_KEY
+
+# Use Tavily
+fieldcure-mcp-essentials --search-engine tavily --search-api-key YOUR_KEY
+
+# Or via environment variables
+ESSENTIALS_SEARCH_ENGINE=serper ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-essentials
+```
+
+### PasswordVault Auto-Detection
+
+API keys can be stored in Windows PasswordVault per engine. When `--search-engine` is omitted, the server scans PasswordVault and automatically selects the best available engine — no CLI args or environment variables needed:
+
+| Engine | PasswordVault Resource |
+|--------|----------------------|
+| Serper | `FieldCure:Essentials:SerperApiKey` |
+| SerpApi | `FieldCure:Essentials:SerpApiApiKey` |
+| Tavily | `FieldCure:Essentials:TavilyApiKey` |
+
+Detection priority: Serper → SerpApi → Tavily → Bing/DuckDuckGo fallback.
+
+### API Key Security
+
+| Engine | Auth Method | Key Exposure |
+|--------|-------------|--------------|
+| Serper | HTTP header (`X-API-KEY`) | Not in URL |
+| Tavily | Authorization header (`Bearer` token) | Not in URL |
+| SerpApi | URL query parameter (`api_key=xxx`) | Visible in server logs |
+
+### Region
+
+Use the `region` parameter for localized results:
+
+```json
+// Korean results
+{ "query": "서울 맛집", "region": "ko-kr" }
+
+// US English results
+{ "query": "best restaurants NYC", "region": "en-us" }
+
+// Global (default)
+{ "query": "Python tutorial" }
+```
+
+Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA. Free engines rely on scraping and may be intermittent — **an API-based engine is strongly recommended for any non-trivial use.**
+If a paid engine is selected but the API key is missing, the server falls back to Bing/DuckDuckGo with a warning on stderr.
 
 ## JavaScript Sandbox
 
@@ -157,45 +183,23 @@ fieldcure-mcp-essentials --memory-path /path/to/memory.db
 ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
 ```
 
-## Web Search
-
-Default engine is Bing (free, no API key needed). For more reliable results, use an API-based engine:
-
-| Engine | Free Tier | API Key |
-|--------|-----------|---------|
-| Bing (default) | Unlimited (scraping) | Not needed |
-| Serper | 2,500 one-time | [serper.dev](https://serper.dev) |
-| Tavily | 1,000/month | [tavily.com](https://tavily.com) |
-| SerpApi | 100/month | [serpapi.com](https://serpapi.com) |
-
-```bash
-# Use Serper
-fieldcure-mcp-essentials --search-engine serper --search-api-key YOUR_KEY
-
-# Use Tavily
-fieldcure-mcp-essentials --search-engine tavily --search-api-key YOUR_KEY
-
-# Or via environment variables
-ESSENTIALS_SEARCH_ENGINE=serper ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-essentials
-```
-
-### API Key Security
-
-| Engine | Auth Method | Key Exposure |
-|--------|-------------|--------------|
-| Serper | HTTP header (`X-API-KEY`) | Not in URL |
-| Tavily | Authorization header (`Bearer` token) | Not in URL |
-| SerpApi | URL query parameter (`api_key=xxx`) | Visible in server logs |
-
-API keys can also be stored in Windows PasswordVault per engine — never exposed via environment variables or CLI args:
-
-| Engine | PasswordVault Resource |
-|--------|----------------------|
-| Serper | `FieldCure:Essentials:SerperApiKey` |
-| Tavily | `FieldCure:Essentials:TavilyApiKey` |
-| SerpApi | `FieldCure:Essentials:SerpApiApiKey` |
+## Configuration
 
 ### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "essentials": {
+      "command": "fieldcure-mcp-essentials"
+    }
+  }
+}
+```
+
+With a search engine:
 
 ```json
 {
@@ -208,23 +212,42 @@ API keys can also be stored in Windows PasswordVault per engine — never expose
 }
 ```
 
-### Region
+### VS Code (Copilot)
 
-Use the `region` parameter for localized results:
+Add to `.vscode/mcp.json`:
 
 ```json
-// Korean results
-{ "query": "서울 맛집", "region": "ko-kr" }
-
-// US English results
-{ "query": "best restaurants NYC", "region": "en-us" }
-
-// Global (default)
-{ "query": "Python tutorial" }
+{
+  "servers": {
+    "essentials": {
+      "command": "fieldcure-mcp-essentials"
+    }
+  }
+}
 ```
 
-Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA. Free engines rely on scraping and may be intermittent — **an API-based engine is strongly recommended for any non-trivial use.**
-If a paid engine is selected but the API key is missing, a warning is logged to stderr and the server falls back to Bing/DuckDuckGo automatically.
+### From source (without dotnet tool)
+
+```json
+{
+  "mcpServers": {
+    "essentials": {
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project", "C:\\path\\to\\fieldcure-mcp-essentials\\src\\FieldCure.Mcp.Essentials"
+      ]
+    }
+  }
+}
+```
+
+## Data Storage
+
+| Data | Location |
+|------|----------|
+| Memory database | `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db` |
+| Search API keys | Windows PasswordVault (DPAPI) |
 
 ## Project Structure
 

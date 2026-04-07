@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.2.0 (2026-04-07)
+
+- **Auto-detect search engine from PasswordVault** — when `--search-engine` is not specified, scans PasswordVault for paid engine API keys (Serper → Tavily → SerpApi) and auto-selects the first match. Enables headless callers (Runner, CLI) to use paid search without explicit arguments
+- **Upgrade ReverseMarkdown 4.* → 5.*** — resolves version conflict with FieldCure.DocumentParsers 1.1.0
+
 ## v1.1.0 (2026-04-07)
 
 ### New Features
