@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.3.1 (2026-04-08)
+
+- **Fix Tesseract native DLL missing in dotnet tool** — upgraded `DocumentParsers.Pdf.Ocr` to 1.0.1 which includes `leptonica-1.82.0.dll` and `tesseract50.dll` via `buildTransitive/.targets`, fixing `DllNotFoundException` on server startup
+
+---
+
 ## v1.3.0 (2026-04-08)
 
 - **OCR fallback for scanned PDFs** — `read_file` and `web_fetch` now extract text from scanned PDFs via Tesseract OCR (English + Korean, tessdata_fast); lazily initialized on first PDF parse

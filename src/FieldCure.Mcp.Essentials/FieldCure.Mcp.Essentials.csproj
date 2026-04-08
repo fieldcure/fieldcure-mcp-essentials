@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.3.0</Version>
+    <Version>1.3.1</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.3.0: OCR fallback for scanned PDFs via DocumentParsers.Pdf.Ocr (Tesseract, eng+kor).</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.3.1: Fix Tesseract native DLL missing in dotnet tool packaging (DocumentParsers.Pdf.Ocr 1.0.1).</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
@@ -51,5 +51,6 @@
     <None Include="Logo.png" Pack="true" PackagePath="" />
     <None Include=".mcp/server.json" Pack="true" PackagePath=".mcp/" />
   </ItemGroup>
+
 
 </Project>
