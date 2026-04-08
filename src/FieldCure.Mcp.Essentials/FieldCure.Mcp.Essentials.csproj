@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.2.0: Auto-detect search engine from PasswordVault; ReverseMarkdown 5.* upgrade.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.3.0: OCR fallback for scanned PDFs via DocumentParsers.Pdf.Ocr (Tesseract, eng+kor).</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
@@ -37,6 +37,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.*" />
     <PackageReference Include="FieldCure.DocumentParsers" Version="1.*" />
     <PackageReference Include="FieldCure.DocumentParsers.Pdf" Version="1.*" />
+    <PackageReference Include="FieldCure.DocumentParsers.Pdf.Ocr" Version="1.*" />
     <PackageReference Include="ReverseMarkdown" Version="5.*" />
     <PackageReference Include="SmartReader" Version="0.11.0" />
   </ItemGroup>

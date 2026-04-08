@@ -9,7 +9,7 @@ Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcont
 
 - **12–16 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + dynamic category search (news, images, scholar, patents) with SerpApi or Serper
 - **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi (+ category search tools)
-- **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown
+- **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown; scanned PDFs supported via Tesseract OCR (English + Korean)
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
 - **Cross-client** — works with Claude Desktop, VS Code, AssistStudio, and any MCP-compatible client
@@ -78,7 +78,7 @@ These tools are auto-registered at startup when a category-capable engine is act
 
 | Format | Extension | Detection |
 |--------|-----------|-----------|
-| PDF | `.pdf` | Content-Type / URL extension |
+| PDF | `.pdf` | Content-Type / URL extension (OCR fallback for scanned pages) |
 | Word | `.docx` | Content-Type / URL extension |
 | Hangul (HWPX) | `.hwpx` | URL extension (no standard Content-Type) |
 | PowerPoint | `.pptx` | Content-Type / URL extension |

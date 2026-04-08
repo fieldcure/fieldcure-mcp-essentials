@@ -34,7 +34,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 
 | Format | Extension | Detection |
 |--------|-----------|-----------|
-| PDF | `.pdf` | Content-Type / URL extension |
+| PDF | `.pdf` | Content-Type / URL extension (OCR fallback for scanned pages) |
 | Word | `.docx` | Content-Type / URL extension |
 | Hangul (HWPX) | `.hwpx` | URL extension (no standard Content-Type) |
 | PowerPoint | `.pptx` | Content-Type / URL extension |

@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.3.0 (2026-04-08)
+
+- **OCR fallback for scanned PDFs** — `read_file` and `web_fetch` now extract text from scanned PDFs via Tesseract OCR (English + Korean, tessdata_fast); lazily initialized on first PDF parse
+- `FieldCure.DocumentParsers.Pdf.Ocr` 1.x dependency
+
+---
+
 ## v1.2.0 (2026-04-07)
 
 - **Auto-detect search engine from PasswordVault** — when `--search-engine` is not specified, scans PasswordVault for paid engine API keys (Serper → Tavily → SerpApi) and auto-selects the first match. Enables headless callers (Runner, CLI) to use paid search without explicit arguments

@@ -12,6 +12,8 @@
     <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.*" />
     <PackageReference Include="MSTest.TestFramework" Version="3.*" />
+    <!-- Needed to copy Tesseract native binaries to test output -->
+    <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
