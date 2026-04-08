@@ -132,7 +132,7 @@ Node.js, Python, Git, Docker, and any other CLI tools.
 
 ## See Also
 
-Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#ecosystem).
+Part of the [AssistStudio ecosystem](https://github.com/fieldcure/fieldcure-assiststudio#packages).
 
 ## Links
 
