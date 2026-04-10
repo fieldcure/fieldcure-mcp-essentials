@@ -54,7 +54,10 @@ public static class HttpRequestTool
         [Description("Timeout in seconds (default: 30, max: 120)")]
         int timeout_seconds = 30,
         [Description("Maximum characters of response body to return. "
-            + "Use a smaller value (e.g., 5000) to save context window. Default: unlimited (up to 1MB).")]
+            + "RECOMMENDED: Set this to 2000-5000 for most API calls when you only need "
+            + "specific fields from the response. Set higher (10000+) only when you need "
+            + "the full response. Default: unlimited (up to 1MB) — using the default "
+            + "wastes context window for large responses.")]
         int? max_response_chars = null,
         CancellationToken cancellationToken = default)
     {

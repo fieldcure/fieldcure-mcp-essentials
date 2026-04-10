@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.4.1 (2026-04-10)
+
+- **`http_request` — stronger `max_response_chars` description** — reworded tool description to explicitly recommend 2000–5000 for most API calls, nudging models to use the parameter by default
+
+---
+
 ## v1.4.0 (2026-04-10)
 
 - **`http_request` — `max_response_chars` parameter** — limit response body size at the character level, independent of the 1MB byte ceiling. Truncated responses include an inline marker so the model knows content was omitted and can adjust its strategy.

@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.4.0</Version>
+    <Version>1.4.1</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.4.0: http_request — new max_response_chars parameter for fine-grained response size control.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.4.1: http_request — stronger max_response_chars description to encourage model adoption.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
