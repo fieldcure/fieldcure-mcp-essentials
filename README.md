@@ -70,7 +70,7 @@ These tools are auto-registered at startup when a category-capable engine is act
 | Purpose | API calls, raw HTTP | Web search | Read web pages |
 | Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Markdown (body only) |
 | Conversion | None | None | SmartReader HTML → Markdown |
-| Length limit | None | `max_results` (max 10) | `max_length` (max 20000) |
+| Length limit | `max_response_chars` (default: unlimited, up to 1MB) | `max_results` (max 10) | `max_length` (max 20000) |
 
 ## Document Parsing
 

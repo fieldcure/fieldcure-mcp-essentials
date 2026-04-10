@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.3.1</Version>
+    <Version>1.4.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.3.1: Fix Tesseract native DLL missing in dotnet tool packaging (DocumentParsers.Pdf.Ocr 1.0.1).</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.4.0: http_request — new max_response_chars parameter for fine-grained response size control.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>

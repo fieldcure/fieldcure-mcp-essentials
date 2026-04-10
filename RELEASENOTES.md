@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.4.0 (2026-04-10)
+
+- **`http_request` — `max_response_chars` parameter** — limit response body size at the character level, independent of the 1MB byte ceiling. Truncated responses include an inline marker so the model knows content was omitted and can adjust its strategy.
+
+---
+
 ## v1.3.1 (2026-04-08)
 
 - **Fix Tesseract native DLL missing in dotnet tool** — upgraded `DocumentParsers.Pdf.Ocr` to 1.0.1 which includes `leptonica-1.82.0.dll` and `tesseract50.dll` via `buildTransitive/.targets`, fixing `DllNotFoundException` on server startup

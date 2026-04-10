@@ -6,7 +6,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 
 | Tool | Description |
 |------|-------------|
-| `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection |
+| `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection and `max_response_chars` for response size control |
 | `web_search` | Search the web and return snippets (title, URL, description) |
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) |
 | `run_command` | Shell command execution with timeout, working directory, and env vars |
