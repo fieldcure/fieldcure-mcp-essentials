@@ -53,6 +53,9 @@ public static class HttpRequestTool
         string? body = null,
         [Description("Timeout in seconds (default: 30, max: 120)")]
         int timeout_seconds = 30,
+        [Description("Maximum characters of response body to return. "
+            + "Use a smaller value (e.g., 5000) to save context window. Default: unlimited (up to 1MB).")]
+        int? max_response_chars = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -127,6 +130,16 @@ public static class HttpRequestTool
 
             var truncated = totalRead >= MaxResponseBytes;
             var bodyText = Encoding.UTF8.GetString(buffer, 0, totalRead);
+
+            // Apply user-specified character limit (finer-grained than the 1MB byte limit)
+            if (max_response_chars is > 0 && bodyText.Length > max_response_chars.Value)
+            {
+                var remaining = bodyText.Length - max_response_chars.Value;
+                bodyText = bodyText[..max_response_chars.Value]
+                    + $"\n\n[Truncated: {remaining:N0} more chars omitted. "
+                    + "Use a smaller max_response_chars or fetch a more specific URL.]";
+                truncated = true;
+            }
 
             var result = new
             {

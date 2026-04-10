@@ -89,4 +89,53 @@ public class HttpRequestToolTests
         using var doc = JsonDocument.Parse(json);
         Assert.IsTrue(doc.RootElement.GetProperty("error").GetString()!.Contains("Invalid headers"));
     }
+
+    #region max_response_chars Tests
+
+    [TestMethod]
+    public async Task MaxResponseChars_TruncatesBody()
+    {
+        // httpbin.org/get returns ~300+ chars; limit to 50
+        var json = await HttpRequestTool.HttpRequest(
+            "https://httpbin.org/get",
+            max_response_chars: 50);
+        using var doc = JsonDocument.Parse(json);
+
+        Assert.AreEqual(200, doc.RootElement.GetProperty("status_code").GetInt32());
+        Assert.IsTrue(doc.RootElement.GetProperty("truncated").GetBoolean());
+
+        var body = doc.RootElement.GetProperty("body").GetString()!;
+        Assert.IsTrue(body.Contains("[Truncated:"));
+        Assert.IsTrue(body.Contains("more chars omitted"));
+    }
+
+    [TestMethod]
+    public async Task MaxResponseChars_Null_NoTruncation()
+    {
+        var json = await HttpRequestTool.HttpRequest(
+            "https://httpbin.org/get",
+            max_response_chars: null);
+        using var doc = JsonDocument.Parse(json);
+
+        Assert.AreEqual(200, doc.RootElement.GetProperty("status_code").GetInt32());
+        Assert.IsFalse(doc.RootElement.TryGetProperty("truncated", out _));
+
+        var body = doc.RootElement.GetProperty("body").GetString()!;
+        Assert.IsFalse(body.Contains("[Truncated:"));
+    }
+
+    [TestMethod]
+    public async Task MaxResponseChars_LargerThanBody_NoTruncation()
+    {
+        // httpbin.org/get returns ~300-500 chars; limit to 100000
+        var json = await HttpRequestTool.HttpRequest(
+            "https://httpbin.org/get",
+            max_response_chars: 100_000);
+        using var doc = JsonDocument.Parse(json);
+
+        Assert.AreEqual(200, doc.RootElement.GetProperty("status_code").GetInt32());
+        Assert.IsFalse(doc.RootElement.TryGetProperty("truncated", out _));
+    }
+
+    #endregion
 }
