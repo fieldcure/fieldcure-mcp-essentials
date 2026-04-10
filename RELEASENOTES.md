@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.4.2 (2026-04-10)
+
+- **`http_request` — refine `max_response_chars` description** — recommend for HTML/text responses, warn against JSON API truncation (truncated JSON cannot be parsed)
+
+---
+
 ## v1.4.1 (2026-04-10)
 
 - **`http_request` — stronger `max_response_chars` description** — reworded tool description to explicitly recommend 2000–5000 for most API calls, nudging models to use the parameter by default

@@ -54,10 +54,9 @@ public static class HttpRequestTool
         [Description("Timeout in seconds (default: 30, max: 120)")]
         int timeout_seconds = 30,
         [Description("Maximum characters of response body to return. "
-            + "RECOMMENDED: Set this to 2000-5000 for most API calls when you only need "
-            + "specific fields from the response. Set higher (10000+) only when you need "
-            + "the full response. Default: unlimited (up to 1MB) — using the default "
-            + "wastes context window for large responses.")]
+            + "RECOMMENDED for HTML/text responses when you only need a portion (e.g., 3000-5000). "
+            + "AVOID for JSON API responses — truncated JSON cannot be parsed. "
+            + "Default: unlimited (up to 1MB).")]
         int? max_response_chars = null,
         CancellationToken cancellationToken = default)
     {
@@ -77,36 +76,34 @@ public static class HttpRequestTool
 
             using var request = new HttpRequestMessage(httpMethod, uri);
 
+            Dictionary<string, string>? headerDict = null;
             if (headers is not null)
             {
                 try
                 {
-                    var headerDict = JsonSerializer.Deserialize<Dictionary<string, string>>(headers);
-                    if (headerDict is not null)
-                    {
-                        foreach (var (key, value) in headerDict)
-                        {
-                            if (key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
-                                continue; // handled via content
-                            request.Headers.TryAddWithoutValidation(key, value);
-                        }
-                    }
+                    headerDict = JsonSerializer.Deserialize<Dictionary<string, string>>(headers);
                 }
                 catch (JsonException)
                 {
                     return JsonSerializer.Serialize(new { error = "Invalid headers JSON." }, JsonOptions);
+                }
+
+                if (headerDict is not null)
+                {
+                    foreach (var (key, value) in headerDict)
+                    {
+                        if (key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
+                            continue; // handled via content
+                        request.Headers.TryAddWithoutValidation(key, value);
+                    }
                 }
             }
 
             if (body is not null)
             {
                 var contentType = "application/json";
-                if (headers is not null)
-                {
-                    var headerDict = JsonSerializer.Deserialize<Dictionary<string, string>>(headers);
-                    if (headerDict?.TryGetValue("Content-Type", out var ct) == true)
-                        contentType = ct;
-                }
+                if (headerDict?.TryGetValue("Content-Type", out var ct) == true)
+                    contentType = ct;
                 request.Content = new StringContent(body, Encoding.UTF8, contentType);
             }
 
@@ -137,8 +134,13 @@ public static class HttpRequestTool
             // Apply user-specified character limit (finer-grained than the 1MB byte limit)
             if (max_response_chars is > 0 && bodyText.Length > max_response_chars.Value)
             {
-                var remaining = bodyText.Length - max_response_chars.Value;
-                bodyText = bodyText[..max_response_chars.Value]
+                var limit = max_response_chars.Value;
+                // Avoid splitting a UTF-16 surrogate pair (emojis, some CJK, etc.)
+                if (limit > 0 && char.IsHighSurrogate(bodyText[limit - 1]))
+                    limit--;
+
+                var remaining = bodyText.Length - limit;
+                bodyText = bodyText[..limit]
                     + $"\n\n[Truncated: {remaining:N0} more chars omitted. "
                     + "Use a smaller max_response_chars or fetch a more specific URL.]";
                 truncated = true;
@@ -150,7 +152,8 @@ public static class HttpRequestTool
                 Headers = responseHeaders,
                 Body = bodyText,
                 ElapsedMs = sw.ElapsedMilliseconds,
-                Truncated = truncated ? true : (bool?)null,
+                Truncated = truncated ? (bool?)true : null,
+                MaxResponseChars = max_response_chars, // null → omitted by WhenWritingNull
             };
 
             return JsonSerializer.Serialize(result, JsonOptions);
