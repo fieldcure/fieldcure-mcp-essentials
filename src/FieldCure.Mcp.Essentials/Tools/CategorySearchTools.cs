@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FieldCure.Mcp.Essentials.Search;
 
 namespace FieldCure.Mcp.Essentials.Tools;
@@ -12,13 +11,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 /// </summary>
 public static class CategorySearchTools
 {
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Searches recent news articles.
     /// </summary>
@@ -137,7 +129,7 @@ public static class CategorySearchTools
         try
         {
             if (string.IsNullOrWhiteSpace(request.Query))
-                return JsonSerializer.Serialize(new { error = "Query must not be empty." }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = "Query must not be empty." }, McpJson.Options);
 
             var result = await engine.SearchAsync(request, ct);
 
@@ -146,15 +138,15 @@ public static class CategorySearchTools
                 engine = result.Engine,
                 category = result.Category.ToString().ToLowerInvariant(),
                 results = result.Items,
-            }, JsonOptions);
+            }, McpJson.Options);
         }
         catch (OperationCanceledException)
         {
-            return JsonSerializer.Serialize(new { error = "Search request timed out." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Search request timed out." }, McpJson.Options);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 }

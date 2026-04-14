@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
@@ -11,16 +10,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class SearchFilesTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Searches for files matching a glob pattern and optional content filter.
     /// </summary>
@@ -43,7 +32,7 @@ public static class SearchFilesTool
         {
             var fullDir = Path.GetFullPath(directory);
             if (!Directory.Exists(fullDir))
-                return JsonSerializer.Serialize(new { error = $"Directory not found: {fullDir}" }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = $"Directory not found: {fullDir}" }, McpJson.Options);
 
             max_results = Math.Clamp(max_results, 1, 10_000);
             var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
@@ -63,7 +52,7 @@ public static class SearchFilesTool
             }
             catch (Exception ex)
             {
-                return JsonSerializer.Serialize(new { error = $"Search failed: {ex.Message}" }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = $"Search failed: {ex.Message}" }, McpJson.Options);
             }
 
             foreach (var file in files)
@@ -99,15 +88,15 @@ public static class SearchFilesTool
                 Truncated = totalFound > max_results,
             };
 
-            return JsonSerializer.Serialize(response, JsonOptions);
+            return JsonSerializer.Serialize(response, McpJson.Options);
         }
         catch (OperationCanceledException)
         {
-            return JsonSerializer.Serialize(new { error = "Search cancelled." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Search cancelled." }, McpJson.Options);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 

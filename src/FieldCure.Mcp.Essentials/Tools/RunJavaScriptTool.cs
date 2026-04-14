@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Jint;
 using Jint.Native;
 using Jint.Runtime;
@@ -16,16 +15,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 public static class RunJavaScriptTool
 {
     /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
-    /// <summary>
     /// Executes JavaScript code in a sandboxed engine and returns the result as JSON.
     /// </summary>
     [McpServerTool(Name = "run_javascript")]
@@ -39,7 +28,7 @@ public static class RunJavaScriptTool
         string? variables = null)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return JsonSerializer.Serialize(new { result = (object?)null, error = "Parameter 'code' is required." }, JsonOptions);
+            return JsonSerializer.Serialize(new { result = (object?)null, error = "Parameter 'code' is required." }, McpJson.Options);
 
         timeout_seconds = Math.Clamp(timeout_seconds, 1, 30);
         var consoleSb = new StringBuilder();
@@ -91,7 +80,7 @@ public static class RunJavaScriptTool
                 }
                 catch (JsonException)
                 {
-                    return JsonSerializer.Serialize(new { result = (object?)null, error = "Invalid variables JSON." }, JsonOptions);
+                    return JsonSerializer.Serialize(new { result = (object?)null, error = "Invalid variables JSON." }, McpJson.Options);
                 }
             }
 
@@ -111,7 +100,7 @@ public static class RunJavaScriptTool
                 Error = (string?)null,
             };
 
-            return JsonSerializer.Serialize(result, JsonOptions);
+            return JsonSerializer.Serialize(result, McpJson.Options);
         }
         catch (TimeoutException)
         {
@@ -120,7 +109,7 @@ public static class RunJavaScriptTool
                 Result = (object?)null,
                 ConsoleOutput = consoleSb.Length > 0 ? consoleSb.ToString().TrimEnd() : null,
                 Error = $"Execution timed out after {timeout_seconds}s.",
-            }, JsonOptions);
+            }, McpJson.Options);
         }
         catch (StatementsCountOverflowException)
         {
@@ -129,7 +118,7 @@ public static class RunJavaScriptTool
                 Result = (object?)null,
                 ConsoleOutput = consoleSb.Length > 0 ? consoleSb.ToString().TrimEnd() : null,
                 Error = "Statement limit exceeded (100,000).",
-            }, JsonOptions);
+            }, McpJson.Options);
         }
         catch (RecursionDepthOverflowException)
         {
@@ -138,7 +127,7 @@ public static class RunJavaScriptTool
                 Result = (object?)null,
                 ConsoleOutput = consoleSb.Length > 0 ? consoleSb.ToString().TrimEnd() : null,
                 Error = "Recursion depth exceeded (64).",
-            }, JsonOptions);
+            }, McpJson.Options);
         }
         catch (JavaScriptException ex)
         {
@@ -147,7 +136,7 @@ public static class RunJavaScriptTool
                 Result = (object?)null,
                 ConsoleOutput = consoleSb.Length > 0 ? consoleSb.ToString().TrimEnd() : null,
                 Error = ex.Message,
-            }, JsonOptions);
+            }, McpJson.Options);
         }
         catch (Exception ex)
         {
@@ -156,7 +145,7 @@ public static class RunJavaScriptTool
                 Result = (object?)null,
                 ConsoleOutput = consoleSb.Length > 0 ? consoleSb.ToString().TrimEnd() : null,
                 Error = ex.Message,
-            }, JsonOptions);
+            }, McpJson.Options);
         }
     }
 

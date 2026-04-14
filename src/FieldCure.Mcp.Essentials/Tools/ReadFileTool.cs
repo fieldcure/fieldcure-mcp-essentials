@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
@@ -13,16 +12,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class ReadFileTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Default maximum character length for document content.
     /// </summary>
@@ -58,7 +47,7 @@ public static class ReadFileTool
             var fullPath = Path.GetFullPath(path);
 
             if (!File.Exists(fullPath))
-                return JsonSerializer.Serialize(new { error = $"File not found: {fullPath}" }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = $"File not found: {fullPath}" }, McpJson.Options);
 
             var extension = Path.GetExtension(fullPath);
 
@@ -69,7 +58,7 @@ public static class ReadFileTool
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 
@@ -92,7 +81,7 @@ public static class ReadFileTool
             Format = extension.TrimStart('.'),
             Length = text.Length,
             Truncated = truncated ? true : (bool?)null,
-        }, JsonOptions);
+        }, McpJson.Options);
     }
 
     /// <summary>
@@ -110,7 +99,7 @@ public static class ReadFileTool
             _ = await fs.ReadAsync(sample.AsMemory(0, sample.Length), ct);
         }
         if (Array.IndexOf(sample, (byte)0) >= 0)
-            return JsonSerializer.Serialize(new { error = "Binary file detected. Use a specialized tool for binary files." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Binary file detected. Use a specialized tool for binary files." }, McpJson.Options);
 
         var allLines = await File.ReadAllLinesAsync(fullPath, enc, ct);
         var totalLines = allLines.Length;
@@ -127,7 +116,7 @@ public static class ReadFileTool
             LinesRead = selectedLines.Length,
             TotalLines = totalLines,
             Truncated = truncated,
-        }, JsonOptions);
+        }, McpJson.Options);
     }
 
     /// <summary>

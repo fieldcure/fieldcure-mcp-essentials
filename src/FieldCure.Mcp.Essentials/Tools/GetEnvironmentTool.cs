@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
@@ -12,16 +11,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class GetEnvironmentTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Returns system environment info as JSON.
     /// </summary>
@@ -42,6 +31,6 @@ public static class GetEnvironmentTool
             DotnetVersion = Environment.Version.ToString(),
         };
 
-        return JsonSerializer.Serialize(result, JsonOptions);
+        return JsonSerializer.Serialize(result, McpJson.Options);
     }
 }

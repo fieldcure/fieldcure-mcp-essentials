@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
@@ -13,16 +12,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class RunCommandTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Maximum bytes to capture per output stream (100 KB).
     /// </summary>
@@ -50,7 +39,7 @@ public static class RunCommandTool
             var workDir = working_directory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
             if (!Directory.Exists(workDir))
-                return JsonSerializer.Serialize(new { error = $"Working directory not found: {workDir}" }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = $"Working directory not found: {workDir}" }, McpJson.Options);
 
             var isWindows = OperatingSystem.IsWindows();
             var psi = new ProcessStartInfo
@@ -79,7 +68,7 @@ public static class RunCommandTool
                 }
                 catch (JsonException)
                 {
-                    return JsonSerializer.Serialize(new { error = "Invalid environment JSON." }, JsonOptions);
+                    return JsonSerializer.Serialize(new { error = "Invalid environment JSON." }, McpJson.Options);
                 }
             }
 
@@ -114,11 +103,11 @@ public static class RunCommandTool
                 TimedOut = timedOut,
             };
 
-            return JsonSerializer.Serialize(result, JsonOptions);
+            return JsonSerializer.Serialize(result, McpJson.Options);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 

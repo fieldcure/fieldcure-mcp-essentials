@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FieldCure.Mcp.Essentials.Search;
 using ModelContextProtocol.Server;
 
@@ -12,16 +11,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class WebSearchTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Searches the web and returns results as JSON.
     /// </summary>
@@ -40,21 +29,21 @@ public static class WebSearchTool
         try
         {
             if (string.IsNullOrWhiteSpace(query))
-                return JsonSerializer.Serialize(new { error = "Query must not be empty." }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = "Query must not be empty." }, McpJson.Options);
 
             max_results = Math.Clamp(max_results, 1, 10);
 
             var results = await searchEngine.SearchAsync(query, max_results, region, cancellationToken);
 
-            return JsonSerializer.Serialize(new { results }, JsonOptions);
+            return JsonSerializer.Serialize(new { results }, McpJson.Options);
         }
         catch (OperationCanceledException)
         {
-            return JsonSerializer.Serialize(new { error = "Search request timed out." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Search request timed out." }, McpJson.Options);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 }

@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FieldCure.Mcp.Essentials.Http;
 using ModelContextProtocol.Server;
 
@@ -14,16 +13,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class HttpRequestTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Shared HTTP client with no built-in timeout (per-request timeout used instead).
     /// </summary>
@@ -64,12 +53,12 @@ public static class HttpRequestTool
         {
             var (uri, urlError) = SsrfGuard.ValidateUrl(url);
             if (uri is null)
-                return JsonSerializer.Serialize(new { error = urlError }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = urlError }, McpJson.Options);
 
             // SSRF guard: resolve DNS and block private IPs
             var ssrfError = await SsrfGuard.CheckAsync(uri, cancellationToken);
             if (ssrfError is not null)
-                return JsonSerializer.Serialize(new { error = ssrfError }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = ssrfError }, McpJson.Options);
 
             timeout_seconds = Math.Clamp(timeout_seconds, 1, 120);
             var httpMethod = new HttpMethod(method?.ToUpperInvariant() ?? "GET");
@@ -85,7 +74,7 @@ public static class HttpRequestTool
                 }
                 catch (JsonException)
                 {
-                    return JsonSerializer.Serialize(new { error = "Invalid headers JSON." }, JsonOptions);
+                    return JsonSerializer.Serialize(new { error = "Invalid headers JSON." }, McpJson.Options);
                 }
 
                 if (headerDict is not null)
@@ -156,19 +145,19 @@ public static class HttpRequestTool
                 MaxResponseChars = max_response_chars, // null → omitted by WhenWritingNull
             };
 
-            return JsonSerializer.Serialize(result, JsonOptions);
+            return JsonSerializer.Serialize(result, McpJson.Options);
         }
         catch (OperationCanceledException)
         {
-            return JsonSerializer.Serialize(new { error = $"Request timed out after {timeout_seconds}s." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = $"Request timed out after {timeout_seconds}s." }, McpJson.Options);
         }
         catch (HttpRequestException ex) when (ex.Message.Contains("SSRF"))
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 

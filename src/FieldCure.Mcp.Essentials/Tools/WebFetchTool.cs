@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using FieldCure.Mcp.Essentials.Http;
 using ModelContextProtocol.Server;
@@ -16,16 +15,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class WebFetchTool
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Shared HTTP client for fetching web pages.
     /// </summary>
@@ -72,11 +61,11 @@ public static class WebFetchTool
         {
             var (uri, urlError) = SsrfGuard.ValidateUrl(url);
             if (uri is null)
-                return JsonSerializer.Serialize(new { error = urlError }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = urlError }, McpJson.Options);
 
             var ssrfError = await SsrfGuard.CheckAsync(uri, cancellationToken);
             if (ssrfError is not null)
-                return JsonSerializer.Serialize(new { error = ssrfError }, JsonOptions);
+                return JsonSerializer.Serialize(new { error = ssrfError }, McpJson.Options);
 
             max_length = Math.Clamp(max_length, 100, AbsoluteMaxLength);
 
@@ -95,15 +84,15 @@ public static class WebFetchTool
         }
         catch (OperationCanceledException)
         {
-            return JsonSerializer.Serialize(new { error = "Request timed out." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Request timed out." }, McpJson.Options);
         }
         catch (HttpRequestException ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = ex.Message }, McpJson.Options);
         }
     }
 
@@ -128,7 +117,7 @@ public static class WebFetchTool
             Content = text,
             Length = text.Length,
             Truncated = truncated ? true : (bool?)null,
-        }, JsonOptions);
+        }, McpJson.Options);
     }
 
     /// <summary>
@@ -169,6 +158,6 @@ public static class WebFetchTool
             Content = text,
             Length = text.Length,
             Truncated = truncated ? true : (bool?)null,
-        }, JsonOptions);
+        }, McpJson.Options);
     }
 }

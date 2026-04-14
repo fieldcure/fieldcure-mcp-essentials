@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FieldCure.Mcp.Essentials.Memory;
 using ModelContextProtocol.Server;
 
@@ -12,16 +11,6 @@ namespace FieldCure.Mcp.Essentials.Tools;
 [McpServerToolType]
 public static class MemoryTools
 {
-    /// <summary>
-    /// JSON serialization options shared across all responses.
-    /// </summary>
-    static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Stores or updates a key-value memory entry.
     /// </summary>
@@ -35,13 +24,13 @@ public static class MemoryTools
         string? value = null)
     {
         if (string.IsNullOrWhiteSpace(key))
-            return JsonSerializer.Serialize(new { error = "Parameter 'key' is required." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Parameter 'key' is required." }, McpJson.Options);
         if (string.IsNullOrWhiteSpace(value))
-            return JsonSerializer.Serialize(new { error = "Parameter 'value' is required." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Parameter 'value' is required." }, McpJson.Options);
 
         var (created, updated) = store.Upsert(key, value);
 
-        return JsonSerializer.Serialize(new { key, created, updated }, JsonOptions);
+        return JsonSerializer.Serialize(new { key, created, updated }, McpJson.Options);
     }
 
     /// <summary>
@@ -57,7 +46,7 @@ public static class MemoryTools
         string? query = null)
     {
         if (string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(query))
-            return JsonSerializer.Serialize(new { error = "Either 'key' or 'query' is required." }, JsonOptions);
+            return JsonSerializer.Serialize(new { error = "Either 'key' or 'query' is required." }, McpJson.Options);
 
         if (!string.IsNullOrWhiteSpace(key))
         {
@@ -66,7 +55,7 @@ public static class MemoryTools
             {
                 deleted = deleted ? 1 : 0,
                 keys = deleted ? new[] { key } : Array.Empty<string>(),
-            }, JsonOptions);
+            }, McpJson.Options);
         }
         else
         {
@@ -75,7 +64,7 @@ public static class MemoryTools
             {
                 deleted = deletedKeys.Count,
                 keys = deletedKeys,
-            }, JsonOptions);
+            }, McpJson.Options);
         }
     }
 
@@ -107,6 +96,6 @@ public static class MemoryTools
             total,
             returned = entries.Count,
             has_more = (offset ?? 0) + entries.Count < total,
-        }, JsonOptions);
+        }, McpJson.Options);
     }
 }
