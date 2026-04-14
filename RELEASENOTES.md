@@ -1,5 +1,14 @@
 # Release Notes
 
+## v1.5.0 (2026-04-14)
+
+### Changed
+
+- **Centralize `JsonSerializerOptions`** — extract shared `McpJson.Options` to eliminate per-tool serializer configuration duplication
+- **Jint 4.7.1 → 4.8.0** — JavaScript sandbox engine update
+
+---
+
 ## v1.4.2 (2026-04-10)
 
 - **`http_request` — refine `max_response_chars` description** — recommend for HTML/text responses, warn against JSON API truncation (truncated JSON cannot be parsed)
