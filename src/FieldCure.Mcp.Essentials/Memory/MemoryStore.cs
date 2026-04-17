@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 
 namespace FieldCure.Mcp.Essentials.Memory;
 
@@ -41,7 +41,7 @@ public sealed class MemoryStore : IDisposable
     /// </summary>
     public static string ResolvePath(string[] args)
     {
-        for (int i = 0; i < args.Length - 1; i++)
+        for (var i = 0; i < args.Length - 1; i++)
         {
             if (args[i] is "--memory-path" or "-m")
                 return Path.GetFullPath(args[i + 1]);

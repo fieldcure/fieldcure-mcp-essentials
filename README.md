@@ -108,15 +108,15 @@ fieldcure-mcp-essentials --search-engine tavily --search-api-key YOUR_KEY
 ESSENTIALS_SEARCH_ENGINE=serper ESSENTIALS_SEARCH_API_KEY=xxx fieldcure-mcp-essentials
 ```
 
-### PasswordVault Auto-Detection
+### Environment Variable Auto-Detection
 
-API keys can be stored in Windows PasswordVault per engine. When `--search-engine` is omitted, the server scans PasswordVault and automatically selects the best available engine — no CLI args or environment variables needed:
+When `--search-engine` is omitted, the server scans environment variables and automatically selects the best available engine:
 
-| Engine | PasswordVault Resource |
-|--------|----------------------|
-| Serper | `FieldCure:Essentials:SerperApiKey` |
-| SerpApi | `FieldCure:Essentials:SerpApiApiKey` |
-| Tavily | `FieldCure:Essentials:TavilyApiKey` |
+| Engine | Environment Variable |
+|--------|---------------------|
+| Serper | `SERPER_API_KEY` |
+| SerpApi | `SERPAPI_API_KEY` |
+| Tavily | `TAVILY_API_KEY` |
 
 Detection priority: Serper → SerpApi → Tavily → Bing/DuckDuckGo fallback.
 
@@ -247,7 +247,7 @@ Add to `.vscode/mcp.json`:
 | Data | Location |
 |------|----------|
 | Memory database | `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db` |
-| Search API keys | Windows PasswordVault (DPAPI) |
+| Search API keys | Environment variables (`SERPER_API_KEY`, `TAVILY_API_KEY`, `SERPAPI_API_KEY`) |
 
 ## Project Structure
 

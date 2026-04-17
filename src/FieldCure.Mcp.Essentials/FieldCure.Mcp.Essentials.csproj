@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>1.5.0</Version>
+    <Version>2.0.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v1.5.0: Centralize JsonSerializerOptions into McpJson.Options shared class; update Jint to 4.8.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.0.0: Remove Windows PasswordVault dependency. Search API keys resolved from environment variables (SERPER_API_KEY, TAVILY_API_KEY, SERPAPI_API_KEY). Cross-platform.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>

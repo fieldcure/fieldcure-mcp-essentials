@@ -1,5 +1,34 @@
 # Release Notes
 
+## v2.0.0 (2026-04-17)
+
+### Breaking
+
+- **Remove Windows PasswordVault dependency** — search API keys are now resolved exclusively from environment variables (`SERPER_API_KEY`, `TAVILY_API_KEY`, `SERPAPI_API_KEY`) or CLI args (`--search-api-key`). The `PasswordVault.cs` file and advapi32.dll P/Invoke have been removed.
+
+### Changed
+
+- **Auto-detect from environment** — engine auto-detection scans environment variables instead of PasswordVault (priority: Serper → SerpApi → Tavily)
+- **Cross-platform** — `net8.0` TFM is no longer misleading; runs on Windows, Linux, and macOS
+
+### Removed
+
+- `PasswordVault.cs` (Windows Credential Manager P/Invoke)
+
+### Migration
+
+If you previously stored API keys in Windows Credential Manager, set the corresponding environment variable instead:
+
+```bash
+# PowerShell
+$env:SERPER_API_KEY = "your-key"
+
+# Or in Claude Desktop config
+"env": { "SERPER_API_KEY": "your-key" }
+```
+
+---
+
 ## v1.5.0 (2026-04-14)
 
 ### Changed

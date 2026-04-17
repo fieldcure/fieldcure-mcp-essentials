@@ -1,12 +1,11 @@
-using System.Reflection;
-using FieldCure.Mcp.Essentials;
-using FieldCure.Mcp.Essentials.Memory;
+﻿using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
 using FieldCure.Mcp.Essentials.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
+using System.Reflection;
 
 // Default CWD to user home when launched by a host app (e.g., AssistStudio)
 // to avoid running in System32 or other system directories.
@@ -73,8 +72,8 @@ static ISearchEngine ResolveSearchEngine(string[] args)
 
     if (engineName is null)
     {
-        // Auto-detect: scan PasswordVault for paid engine API keys
-        var detected = DetectEngineFromVault();
+        // Auto-detect: scan environment for paid engine API keys
+        var detected = DetectEngineFromEnv();
         if (detected is not null)
             return detected;
 
@@ -83,7 +82,7 @@ static ISearchEngine ResolveSearchEngine(string[] args)
         return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
     }
 
-    // CLI arg > env var > engine-specific PasswordVault key
+    // CLI arg > env var > engine-specific env var
     var apiKey = ResolveArg(args, "--search-api-key", "ESSENTIALS_SEARCH_API_KEY")
                  ?? ReadEngineApiKey(engineName);
 
@@ -95,7 +94,7 @@ static ISearchEngine ResolveSearchEngine(string[] args)
 /// </summary>
 static string? ResolveArg(string[] args, string cliFlag, string envVar)
 {
-    for (int i = 0; i < args.Length - 1; i++)
+    for (var i = 0; i < args.Length - 1; i++)
     {
         if (args[i] == cliFlag)
             return args[i + 1];
@@ -106,24 +105,24 @@ static string? ResolveArg(string[] args, string cliFlag, string envVar)
 }
 
 /// <summary>
-/// Scans PasswordVault for paid search engine API keys and returns the first match.
-/// Priority: Serper → Tavily → SerpApi.
+/// Scans environment variables for paid search engine API keys and returns the first match.
+/// Priority: Serper → SerpApi → Tavily.
 /// </summary>
-static ISearchEngine? DetectEngineFromVault()
+static ISearchEngine? DetectEngineFromEnv()
 {
-    (string Name, string VaultKey)[] engines =
+    (string Name, string EnvVar)[] engines =
     [
-        ("serper", "FieldCure:Essentials:SerperApiKey"),
-        ("serpapi", "FieldCure:Essentials:SerpApiApiKey"),
-        ("tavily", "FieldCure:Essentials:TavilyApiKey"),
+        ("serper", "SERPER_API_KEY"),
+        ("serpapi", "SERPAPI_API_KEY"),
+        ("tavily", "TAVILY_API_KEY"),
     ];
 
-    foreach (var (name, vaultKey) in engines)
+    foreach (var (name, envVar) in engines)
     {
-        var apiKey = ReadFromPasswordVault(vaultKey);
-        if (apiKey is not null)
+        var apiKey = Environment.GetEnvironmentVariable(envVar);
+        if (!string.IsNullOrEmpty(apiKey))
         {
-            Console.Error.WriteLine($"[Info] Auto-detected search engine '{name}' from PasswordVault.");
+            Console.Error.WriteLine($"[Info] Auto-detected search engine '{name}' from {envVar}.");
             return CreateEngine(name, apiKey);
         }
     }
@@ -132,21 +131,22 @@ static ISearchEngine? DetectEngineFromVault()
 }
 
 /// <summary>
-/// Reads an API key from PasswordVault using an engine-specific resource name.
+/// Reads an API key from engine-specific environment variables.
 /// </summary>
-static string? ReadEngineApiKey(string engineName) => engineName.ToLowerInvariant() switch
+static string? ReadEngineApiKey(string engineName)
 {
-    "serper" => ReadFromPasswordVault("FieldCure:Essentials:SerperApiKey"),
-    "tavily" => ReadFromPasswordVault("FieldCure:Essentials:TavilyApiKey"),
-    "serpapi" => ReadFromPasswordVault("FieldCure:Essentials:SerpApiApiKey"),
-    _ => null,
-};
+    var envVar = engineName.ToLowerInvariant() switch
+    {
+        "serper" => "SERPER_API_KEY",
+        "tavily" => "TAVILY_API_KEY",
+        "serpapi" => "SERPAPI_API_KEY",
+        _ => null,
+    };
 
-/// <summary>
-/// Reads a credential from Windows Credential Manager (PasswordVault-compatible).
-/// </summary>
-static string? ReadFromPasswordVault(string resourceName, string userName = "default") =>
-    PasswordVault.Read(resourceName, userName);
+    if (envVar is null) return null;
+    var value = Environment.GetEnvironmentVariable(envVar);
+    return string.IsNullOrEmpty(value) ? null : value;
+}
 
 /// <summary>
 /// Creates a search engine instance by name, with optional API key for paid engines.
@@ -162,13 +162,13 @@ static ISearchEngine CreateEngine(string name, string? apiKey)
         "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
         "serper" => apiKey is not null
             ? new SerperSearchEngine(apiKey)
-            : LogAndFallback("Serper API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerperApiKey')", fallback),
+            : LogAndFallback("Serper API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or SERPER_API_KEY)", fallback),
         "tavily" => apiKey is not null
             ? new TavilySearchEngine(apiKey)
-            : LogAndFallback("Tavily API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:TavilyApiKey')", fallback),
+            : LogAndFallback("Tavily API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or TAVILY_API_KEY)", fallback),
         "serpapi" => apiKey is not null
             ? new SerpApiSearchEngine(apiKey)
-            : LogAndFallback("SerpApi API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or PasswordVault 'FieldCure:Essentials:SerpApiApiKey')", fallback),
+            : LogAndFallback("SerpApi API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or SERPAPI_API_KEY)", fallback),
         _ => LogAndFallback($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi", fallback),
     };
 }
