@@ -42,9 +42,7 @@ var mcpBuilder = builder.Services
             Description = searchEngine is ICategorySearchEngine cat
                 ? $"HTTP, web search (+ {string.Join(", ", cat.SupportedCategories.Select(c => c.ToString().ToLowerInvariant()))}), shell, JavaScript, file I/O, persistent memory"
                 : "HTTP, web search, shell, JavaScript, file I/O, persistent memory",
-            Version = typeof(Program).Assembly
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                ?.InformationalVersion ?? "0.0.0",
+            Version = GetPublicVersion(),
         };
     })
     .WithStdioServerTransport()
@@ -227,4 +225,21 @@ static void RegisterCategoryTools(IMcpServerBuilder mcpBuilder, ICategorySearchE
 
     if (tools.Count > 0)
         mcpBuilder.WithTools(tools);
+}
+
+/// <summary>
+/// Returns the user-facing server version. Strips the SemVer 2.0 build-metadata
+/// suffix (<c>+&lt;commit-sha&gt;</c>) that the .NET SDK auto-appends to
+/// <see cref="AssemblyInformationalVersionAttribute"/>; that hash is only useful
+/// to developers and just adds noise in client UIs. The assembly attribute
+/// itself still carries the full string for diagnostic logs and debuggers.
+/// </summary>
+static string GetPublicVersion()
+{
+    var info = typeof(Program).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        ?.InformationalVersion;
+    if (string.IsNullOrEmpty(info)) return "0.0.0";
+    var plus = info.IndexOf('+');
+    return plus > 0 ? info[..plus] : info;
 }
