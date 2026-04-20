@@ -9,7 +9,7 @@ Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcont
 
 - **12–16 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + dynamic category search (news, images, scholar, patents) with SerpApi or Serper
 - **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi (+ category search tools)
-- **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown; scanned PDFs supported via Tesseract OCR (English + Korean)
+- **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown. PDF text extraction is text-layer only; scanned PDFs without a text layer yield empty text. For OCR-backed indexing use [`fieldcure-mcp-rag`](https://github.com/fieldcure/fieldcure-mcp-rag).
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
 - **Cross-client** — works with Claude Desktop, VS Code, AssistStudio, and any MCP-compatible client
@@ -78,7 +78,7 @@ These tools are auto-registered at startup when a category-capable engine is act
 
 | Format | Extension | Detection |
 |--------|-----------|-----------|
-| PDF | `.pdf` | Content-Type / URL extension (OCR fallback for scanned pages) |
+| PDF | `.pdf` | Content-Type / URL extension (text layer only; no OCR) |
 | Word | `.docx` | Content-Type / URL extension |
 | Hangul (HWPX) | `.hwpx` | URL extension (no standard Content-Type) |
 | PowerPoint | `.pptx` | Content-Type / URL extension |
@@ -144,7 +144,12 @@ Use the `region` parameter for localized results:
 ```
 
 Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA. Free engines rely on scraping and may be intermittent — **an API-based engine is strongly recommended for any non-trivial use.**
-If a paid engine is selected but the API key is missing, the server falls back to Bing/DuckDuckGo with a warning on stderr.
+
+### Explicit paid engine without a key — MCP Elicitation
+
+When `--search-engine serper|tavily|serpapi` is selected explicitly but no API key is configured (CLI arg, `ESSENTIALS_SEARCH_API_KEY`, or engine-specific env var), the server waits until the first `web_search` call and then asks the MCP client for the key via [MCP Elicitation](https://spec.modelcontextprotocol.io/specification/2025-06-18/client/elicitation/). If the user declines, a follow-up prompt asks whether to run the search with free Bing/DuckDuckGo instead. Declining both lets the tool soft-fail with a clear message so the LLM can recover.
+
+Clients without Elicitation support (including older CLI hosts) fall back to the free engine immediately, matching the pre-2.1 behaviour. Cached keys live for the process lifetime; the host can re-elicit after an upstream 401/403 if the tool invalidates the cache.
 
 ## JavaScript Sandbox
 

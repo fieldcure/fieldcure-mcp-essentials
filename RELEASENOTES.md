@@ -1,5 +1,27 @@
 # Release Notes
 
+## v2.1.0 (2026-04-20)
+
+### Added
+
+- **MCP Elicitation for explicit paid engines** — when the user selects Serper / Tavily / SerpApi explicitly via `--search-engine` or `ESSENTIALS_SEARCH_ENGINE` but no API key is configured, the server elicits the key from the MCP client on the first `web_search` call instead of silently falling back to Bing/DuckDuckGo. A second elicitation asks whether to run the search with the free engine anyway; declining both yields a structured soft-fail. Auto-detect mode (no explicit engine) keeps its pre-existing free-fallback behaviour.
+- **`IElicitGate` abstraction** (`Services/IElicitGate.cs`, `McpServerElicitGate.cs`, `ApiKeyResolverRegistry.cs`) — wraps the subset of `McpServer` that credential resolution needs so resolvers can be unit tested without constructing a real server.
+- **`ApiKeyResolverRegistry.Invalidate(envVarName)`** — discards a cached key after an upstream 401/403 and marks the environment-variable source as exhausted, forcing the next resolve to re-elicit instead of returning the same rejected key.
+- **`LazyPaidSearchEngine`** — explicit paid engines without a key are wrapped in a proxy that defers the concrete engine creation to the first tool call; category tool registration still happens at startup via a static `SupportedCategories` mapping.
+- **Unit tests** — `LazyPaidSearchEngineTests` covers the six new decision paths (supported / unsupported elicit, accept / decline, fallback consent, re-elicit after invalidate, category fallback shape).
+
+### Changed
+
+- **`FieldCure.DocumentParsers` 1.x → 2.x** — PDF text extraction is now part of the core DocumentParsers package; the dedicated `FieldCure.DocumentParsers.Pdf` reference is removed. `DocumentHelper` drops the lazy `TesseractOcrEngine` initialization entirely. Scanned PDFs without a text layer yield empty text. For OCR-backed indexing use [`fieldcure-mcp-rag`](https://github.com/fieldcure/fieldcure-mcp-rag), which bundles that path conditionally on Windows.
+- **`WebSearchTool.WebSearch` and `CategorySearchTools` entry points accept a nullable `McpServer`** — existing unit tests and direct invocations keep working; when the server is available the tool wraps it in `McpServerElicitGate` and dispatches through `IMcpAwareSearchEngine` / `IMcpAwareCategorySearchEngine`.
+
+### Behaviour notes
+
+- **Non-breaking by default.** Clients without Elicitation support see the pre-2.1 free-fallback behaviour, just as before. The new prompts only appear on Elicitation-capable clients when the explicit-engine path is taken without a key.
+- **Session cache, max 2 re-elicits.** Once an API key is obtained it is reused for the rest of the server process. Up to two re-elicitations per env-var slot are allowed after invalidation, matching the same cap used by `fieldcure-mcp-rag`.
+
+---
+
 ## v2.0.0 (2026-04-17)
 
 ### Breaking

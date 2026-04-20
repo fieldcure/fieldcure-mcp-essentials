@@ -34,7 +34,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 
 | Format | Extension | Detection |
 |--------|-----------|-----------|
-| PDF | `.pdf` | Content-Type / URL extension (OCR fallback for scanned pages) |
+| PDF | `.pdf` | Content-Type / URL extension (text-layer only; scanned pages yield empty text — use `fieldcure-mcp-rag` for OCR) |
 | Word | `.docx` | Content-Type / URL extension |
 | Hangul (HWPX) | `.hwpx` | URL extension (no standard Content-Type) |
 | PowerPoint | `.pptx` | Content-Type / URL extension |
@@ -76,7 +76,8 @@ Use the `region` parameter for localized results:
 ```
 
 Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA.
-If a paid engine is selected but the API key is missing, the server falls back to Bing/DuckDuckGo with a warning on stderr.
+
+If a paid engine is selected explicitly but no API key is configured, the server no longer silently falls back. On the first `web_search` call it asks the MCP client for the key via MCP Elicitation; if the client does not support Elicitation, or the user declines and then also declines the follow-up "use free fallback?" prompt, the call soft-fails with a clear message. Cached keys live for the process lifetime.
 
 ## Memory
 

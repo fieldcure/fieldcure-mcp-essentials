@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v2.0.0: Remove Windows PasswordVault dependency. Search API keys resolved from environment variables (SERPER_API_KEY, TAVILY_API_KEY, SERPAPI_API_KEY). Cross-platform.</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.1.0: MCP Elicitation on explicit paid search engines (Serper/Tavily/SerpApi) when the API key is not configured — falls through to a "use free search instead?" prompt before soft-failing. Auto-detect mode keeps free fallback as before. FieldCure.DocumentParsers upgraded to 2.x (core now carries PDF text extraction); OCR is no longer bundled — use fieldcure-mcp-rag for scanned PDFs. IElicitGate abstraction and ApiKeyResolverRegistry with Invalidate for unit-testable credential resolution.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
