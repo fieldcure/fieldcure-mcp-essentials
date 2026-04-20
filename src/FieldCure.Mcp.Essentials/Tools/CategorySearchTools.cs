@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Text.Json;
 using FieldCure.Mcp.Essentials.Search;
+using FieldCure.Mcp.Essentials.Services;
+using ModelContextProtocol.Server;
 
 namespace FieldCure.Mcp.Essentials.Tools;
 
@@ -15,6 +17,7 @@ public static class CategorySearchTools
     /// Searches recent news articles.
     /// </summary>
     public static async Task<string> SearchNews(
+        McpServer? server,
         ICategorySearchEngine engine,
         [Description("News search query")]
         string query,
@@ -26,7 +29,7 @@ public static class CategorySearchTools
         string? region = null,
         CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync(engine, new CategorySearchRequest
+        return await ExecuteAsync(server, engine, new CategorySearchRequest
         {
             Category = SearchCategory.News,
             Query = query,
@@ -40,6 +43,7 @@ public static class CategorySearchTools
     /// Searches images.
     /// </summary>
     public static async Task<string> SearchImages(
+        McpServer? server,
         ICategorySearchEngine engine,
         [Description("Image search query")]
         string query,
@@ -53,7 +57,7 @@ public static class CategorySearchTools
         string? region = null,
         CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync(engine, new CategorySearchRequest
+        return await ExecuteAsync(server, engine, new CategorySearchRequest
         {
             Category = SearchCategory.Images,
             Query = query,
@@ -68,6 +72,7 @@ public static class CategorySearchTools
     /// Searches academic papers.
     /// </summary>
     public static async Task<string> SearchScholar(
+        McpServer? server,
         ICategorySearchEngine engine,
         [Description("Academic search query")]
         string query,
@@ -81,7 +86,7 @@ public static class CategorySearchTools
         string? region = null,
         CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync(engine, new CategorySearchRequest
+        return await ExecuteAsync(server, engine, new CategorySearchRequest
         {
             Category = SearchCategory.Scholar,
             Query = query,
@@ -96,6 +101,7 @@ public static class CategorySearchTools
     /// Searches patent documents.
     /// </summary>
     public static async Task<string> SearchPatents(
+        McpServer? server,
         ICategorySearchEngine engine,
         [Description("Patent search query")]
         string query,
@@ -111,7 +117,7 @@ public static class CategorySearchTools
         string? region = null,
         CancellationToken cancellationToken = default)
     {
-        return await ExecuteAsync(engine, new CategorySearchRequest
+        return await ExecuteAsync(server, engine, new CategorySearchRequest
         {
             Category = SearchCategory.Patents,
             Query = query,
@@ -123,15 +129,28 @@ public static class CategorySearchTools
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// Executes a category search and serializes the result into the shared MCP
+    /// JSON response shape used by all category tools.
+    /// </summary>
+    /// <param name="server">The active MCP server instance, or <see langword="null"/> for direct calls.</param>
+    /// <param name="engine">The injected category-capable search engine.</param>
+    /// <param name="request">The normalized category search request.</param>
+    /// <param name="ct">Cancellation token for the search operation.</param>
+    /// <returns>A JSON payload containing either results or an error.</returns>
     static async Task<string> ExecuteAsync(
-        ICategorySearchEngine engine, CategorySearchRequest request, CancellationToken ct)
+        McpServer? server, ICategorySearchEngine engine, CategorySearchRequest request, CancellationToken ct)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(request.Query))
                 return JsonSerializer.Serialize(new { error = "Query must not be empty." }, McpJson.Options);
 
-            var result = await engine.SearchAsync(request, ct);
+            var gate = server is null ? null : new McpServerElicitGate(server);
+
+            var result = engine is IMcpAwareCategorySearchEngine mcpAware
+                ? await mcpAware.SearchAsync(gate, request, ct)
+                : await engine.SearchAsync(request, ct);
 
             return JsonSerializer.Serialize(new
             {

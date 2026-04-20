@@ -1,5 +1,6 @@
-﻿using FieldCure.Mcp.Essentials.Memory;
+using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
+using FieldCure.Mcp.Essentials.Services;
 using FieldCure.Mcp.Essentials.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,8 +18,10 @@ if (Directory.Exists(cwd))
 // Resolve memory file path: CLI arg (--memory-path) > env var > default
 var memoryPath = MemoryStore.ResolvePath(args);
 
+var apiKeyResolvers = new ApiKeyResolverRegistry();
+
 // Resolve search engine: CLI arg (--search-engine) > env var > default (bing)
-var searchEngine = ResolveSearchEngine(args);
+var searchEngine = ResolveSearchEngine(args, apiKeyResolvers);
 
 var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 
@@ -30,6 +33,7 @@ builder.Logging.AddConsole(options =>
 builder.Services
     .AddSingleton(new MemoryStore(memoryPath));
 
+builder.Services.AddSingleton(apiKeyResolvers);
 builder.Services.AddSingleton<ISearchEngine>(searchEngine);
 
 var mcpBuilder = builder.Services
@@ -64,7 +68,7 @@ return 0;
 /// <summary>
 /// Resolves the search engine from CLI args, environment variable, or default.
 /// </summary>
-static ISearchEngine ResolveSearchEngine(string[] args)
+static ISearchEngine ResolveSearchEngine(string[] args, ApiKeyResolverRegistry apiKeyResolvers)
 {
     var engineName = ResolveArg(args, "--search-engine", "ESSENTIALS_SEARCH_ENGINE");
 
@@ -84,7 +88,7 @@ static ISearchEngine ResolveSearchEngine(string[] args)
     var apiKey = ResolveArg(args, "--search-api-key", "ESSENTIALS_SEARCH_API_KEY")
                  ?? ReadEngineApiKey(engineName);
 
-    return CreateEngine(engineName, apiKey);
+    return CreateEngine(engineName, apiKey, apiKeyResolvers);
 }
 
 /// <summary>
@@ -121,7 +125,7 @@ static ISearchEngine? DetectEngineFromEnv()
         if (!string.IsNullOrEmpty(apiKey))
         {
             Console.Error.WriteLine($"[Info] Auto-detected search engine '{name}' from {envVar}.");
-            return CreateEngine(name, apiKey);
+            return CreateConcreteEngine(name, apiKey);
         }
     }
 
@@ -148,9 +152,9 @@ static string? ReadEngineApiKey(string engineName)
 
 /// <summary>
 /// Creates a search engine instance by name, with optional API key for paid engines.
-/// Falls back to Bing/DuckDuckGo if a paid engine's API key is missing.
+/// Explicit paid engines use lazy elicitation before falling back to Bing/DuckDuckGo.
 /// </summary>
-static ISearchEngine CreateEngine(string name, string? apiKey)
+static ISearchEngine CreateEngine(string name, string? apiKey, ApiKeyResolverRegistry apiKeyResolvers)
 {
     var fallback = new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
 
@@ -159,17 +163,31 @@ static ISearchEngine CreateEngine(string name, string? apiKey)
         "bing" => new BingSearchEngine(),
         "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
         "serper" => apiKey is not null
-            ? new SerperSearchEngine(apiKey)
-            : LogAndFallback("Serper API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or SERPER_API_KEY)", fallback),
+            ? CreateConcreteEngine("serper", apiKey)
+            : new LazyPaidSearchEngine("serper", "Serper", "SERPER_API_KEY", apiKeyResolvers, fallback, CreateConcreteEngine),
         "tavily" => apiKey is not null
-            ? new TavilySearchEngine(apiKey)
-            : LogAndFallback("Tavily API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or TAVILY_API_KEY)", fallback),
+            ? CreateConcreteEngine("tavily", apiKey)
+            : new LazyPaidSearchEngine("tavily", "Tavily", "TAVILY_API_KEY", apiKeyResolvers, fallback, CreateConcreteEngine),
         "serpapi" => apiKey is not null
-            ? new SerpApiSearchEngine(apiKey)
-            : LogAndFallback("SerpApi API key not found (--search-api-key, ESSENTIALS_SEARCH_API_KEY, or SERPAPI_API_KEY)", fallback),
+            ? CreateConcreteEngine("serpapi", apiKey)
+            : new LazyPaidSearchEngine("serpapi", "SerpApi", "SERPAPI_API_KEY", apiKeyResolvers, fallback, CreateConcreteEngine),
         _ => LogAndFallback($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi", fallback),
     };
 }
+
+/// <summary>
+/// Creates a concrete paid search engine once an API key is already available.
+/// </summary>
+/// <param name="name">Internal engine key such as <c>serper</c>.</param>
+/// <param name="apiKey">Resolved API key for the selected engine.</param>
+/// <returns>A concrete paid search engine instance.</returns>
+static ISearchEngine CreateConcreteEngine(string name, string apiKey) => name.ToLowerInvariant() switch
+{
+    "serper" => new SerperSearchEngine(apiKey),
+    "tavily" => new TavilySearchEngine(apiKey),
+    "serpapi" => new SerpApiSearchEngine(apiKey),
+    _ => throw new NotSupportedException($"Paid search engine '{name}' is not supported."),
+};
 
 /// <summary>
 /// Logs a warning to stderr and returns the fallback search engine.
@@ -196,6 +214,13 @@ static void RegisterCategoryTools(IMcpServerBuilder mcpBuilder, ICategorySearchE
         .AddSingleton<ICategorySearchEngine>(engine)
         .BuildServiceProvider();
 
+    /// <summary>
+    /// Builds per-tool registration options with an engine-specific description
+    /// and a temporary service provider that supplies the category engine.
+    /// </summary>
+    /// <param name="toolName">Public MCP tool name.</param>
+    /// <param name="description">Engine-specific tool description.</param>
+    /// <returns>Tool creation options for dynamic registration.</returns>
     McpServerToolCreateOptions Options(string toolName, string description) => new()
     {
         Name = toolName,
