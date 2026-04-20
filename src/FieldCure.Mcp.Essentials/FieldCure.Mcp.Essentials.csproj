@@ -35,9 +35,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
     <PackageReference Include="Jint" Version="4.*" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.*" />
-    <PackageReference Include="FieldCure.DocumentParsers" Version="1.*" />
-    <PackageReference Include="FieldCure.DocumentParsers.Pdf" Version="1.*" />
-    <PackageReference Include="FieldCure.DocumentParsers.Pdf.Ocr" Version="1.*" />
+    <PackageReference Include="FieldCure.DocumentParsers" Version="2.*" />
     <PackageReference Include="ReverseMarkdown" Version="5.*" />
     <PackageReference Include="SmartReader" Version="0.11.0" />
   </ItemGroup>
