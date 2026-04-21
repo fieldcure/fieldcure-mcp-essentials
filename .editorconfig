@@ -119,6 +119,7 @@ dotnet_style_namespace_match_folder = true:suggestion
 indent_style = space
 indent_size = 2
 tab_width = 2
+charset = utf-8
 
 [*.cs]
 charset = utf-8-bom

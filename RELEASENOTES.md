@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.1 (2026-04-20)
+
+- Update MCP package metadata to the latest `server.json` format for NuGet and VS Code integration.
+
 ## v2.1.0 (2026-04-20)
 
 ### Added

@@ -2,6 +2,8 @@
 
 Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12–16 essential tools for any MCP client — web search, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered.
 
+<!-- mcp-name: io.github.fieldcure/essentials -->
+
 ## Tools
 
 | Tool | Description |
