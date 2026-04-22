@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 12–16 essential tools for any MCP client — web search, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 13–17 essential tools for any MCP client — web search, Wolfram|Alpha, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered.
 
 <!-- mcp-name: io.github.fieldcure/essentials -->
 
@@ -13,6 +13,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) |
 | `run_command` | Shell command execution with timeout, working directory, and env vars |
 | `run_javascript` | Sandboxed JavaScript (Jint) — math, JSON, regex, data processing |
+| `wolfram_alpha` | Wolfram&#124;Alpha computational knowledge — symbolic math, plots, unit conversions, constants. MathML passes through for native rendering |
 | `get_environment` | System info — time, timezone, OS, hostname, username |
 | `read_file` | Read files — text with offset/limit, documents (PDF, DOCX, HWPX, PPTX, XLSX) parsed to Markdown |
 | `write_file` | File writing (overwrite/append) with auto directory creation |
@@ -80,6 +81,16 @@ Use the `region` parameter for localized results:
 Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches on CAPTCHA.
 
 If a paid engine is selected explicitly but no API key is configured, the server no longer silently falls back. On the first `web_search` call it asks the MCP client for the key via MCP Elicitation; if the client does not support Elicitation, or the user declines and then also declines the follow-up "use free fallback?" prompt, the call soft-fails with a clear message. Cached keys live for the process lifetime.
+
+## Wolfram|Alpha
+
+`wolfram_alpha` calls the Full Results API v2 and returns mixed text/image content. MathML is passed through verbatim — clients that render MathML (e.g. ChatPanel WebView2) display formulas natively, no client-side conversion needed. Plots and other visual pods are embedded as `ImageContent`. The API's `reinterpret=true` flag is always on, so the server auto-corrects most failed queries before returning.
+
+Set `WOLFRAM_APPID` to the AppID obtained at [developer.wolframalpha.com](https://developer.wolframalpha.com) (select **Full Results API**, free tier: 2,000 calls/month, non-commercial). Clients that support MCP Elicitation are prompted for the key on first use if the env var is unset.
+
+> ⚠️ Use `developer.wolframalpha.com`, not `developer.wolfram.com` — the latter is a separate paid portal.
+
+The tool is always registered regardless of AppID status; without a key it returns a setup-guidance error so the model can inform the user.
 
 ## Memory
 

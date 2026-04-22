@@ -1,6 +1,7 @@
 using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
 using FieldCure.Mcp.Essentials.Services;
+using FieldCure.Mcp.Essentials.Services.WolframAlpha;
 using FieldCure.Mcp.Essentials.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,6 +37,12 @@ builder.Services
 builder.Services.AddSingleton(apiKeyResolvers);
 builder.Services.AddSingleton<ISearchEngine>(searchEngine);
 
+// Wolfram|Alpha — always registered; AppID is resolved lazily via
+// ApiKeyResolverRegistry on first tool invocation.
+var wolframHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+builder.Services.AddSingleton(new WolframAlphaClient(wolframHttp));
+builder.Services.AddSingleton(new ResultConverter(wolframHttp));
+
 var mcpBuilder = builder.Services
     .AddMcpServer(options =>
     {
@@ -44,8 +51,8 @@ var mcpBuilder = builder.Services
             Name = "fieldcure-mcp-essentials",
             Title = "FieldCure Essentials",
             Description = searchEngine is ICategorySearchEngine cat
-                ? $"HTTP, web search (+ {string.Join(", ", cat.SupportedCategories.Select(c => c.ToString().ToLowerInvariant()))}), shell, JavaScript, file I/O, persistent memory"
-                : "HTTP, web search, shell, JavaScript, file I/O, persistent memory",
+                ? $"HTTP, web search (+ {string.Join(", ", cat.SupportedCategories.Select(c => c.ToString().ToLowerInvariant()))}), Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory"
+                : "HTTP, web search, Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory",
             Version = GetPublicVersion(),
         };
     })

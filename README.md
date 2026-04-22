@@ -3,12 +3,12 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 12–16 essential tools — HTTP requests, web search & fetch, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 13–17 essential tools — HTTP requests, web search & fetch, Wolfram|Alpha computational knowledge, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. With SerpApi or Serper, category search tools (news, images, scholar, patents) are auto-registered. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **12–16 essential tools** — HTTP, web search & fetch, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + dynamic category search (news, images, scholar, patents) with SerpApi or Serper
-- **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, and SerpApi (+ category search tools)
+- **13–17 essential tools** — HTTP, web search & fetch, Wolfram|Alpha, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + dynamic category search (news, images, scholar, patents) with SerpApi or Serper
+- **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, SerpApi (+ category search tools), and Wolfram|Alpha
 - **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown. PDF text extraction is text-layer only; scanned PDFs without a text layer yield empty text. For OCR-backed indexing use [`fieldcure-mcp-rag`](https://github.com/fieldcure/fieldcure-mcp-rag).
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
 - **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
@@ -44,6 +44,7 @@ dotnet build
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) | — |
 | `run_command` | Execute shell commands with working directory and environment variables | Yes |
 | `run_javascript` | Sandboxed JavaScript execution (Jint) for math, data processing, JSON, regex | — |
+| `wolfram_alpha` | Wolfram&#124;Alpha Full Results API — symbolic math, plots, unit conversions, constants; MathML passes through for native rendering | — |
 | `get_environment` | System info — local time, timezone, OS, hostname, username, .NET version | — |
 | `read_file` | Read files — text with offset/limit, documents (PDF, DOCX, HWPX, PPTX, XLSX) parsed to Markdown | — |
 | `write_file` | Write or append text to files with auto directory creation | Yes |
@@ -150,6 +151,27 @@ Without `--search-engine`, a fallback engine (Bing → DuckDuckGo) auto-switches
 When `--search-engine serper|tavily|serpapi` is selected explicitly but no API key is configured (CLI arg, `ESSENTIALS_SEARCH_API_KEY`, or engine-specific env var), the server waits until the first `web_search` call and then asks the MCP client for the key via [MCP Elicitation](https://spec.modelcontextprotocol.io/specification/2025-06-18/client/elicitation/). If the user declines, a follow-up prompt asks whether to run the search with free Bing/DuckDuckGo instead. Declining both lets the tool soft-fail with a clear message so the LLM can recover.
 
 Clients without Elicitation support (including older CLI hosts) fall back to the free engine immediately, matching the pre-2.1 behaviour. Cached keys live for the process lifetime; the host can re-elicit after an upstream 401/403 if the tool invalidates the cache.
+
+## Wolfram|Alpha
+
+`wolfram_alpha` calls the [Full Results API v2](https://products.wolframalpha.com/api/) and returns mixed content — plaintext, MathML (passed through verbatim for clients that render MathML natively, e.g. ChatPanel/WebView2), and plot images embedded as `ImageContent`. The API's `reinterpret=true` flag is always on so most typo-level failures auto-correct server-side; only real parse failures surface `isError: true` with `assumptions > tips > didyoumeans` guidance.
+
+### AppID
+
+Set `WOLFRAM_APPID` to the AppID obtained at [developer.wolframalpha.com](https://developer.wolframalpha.com) (**select "Full Results API"**; free tier: 2,000 calls/month, non-commercial). On MCP clients that support Elicitation the key can also be supplied interactively on first use. A rejected AppID (401/403) triggers a single invalidate-and-retry so a mistyped key can be re-elicited; the existing `ApiKeyResolverRegistry` re-elicit cap (2 per env-var slot) prevents loops.
+
+> ⚠️ Use `developer.wolframalpha.com`, **not** `developer.wolfram.com` — the latter is a separate paid portal and will show "no permission to access any API keys" for free accounts.
+
+The tool is always registered regardless of AppID status; without a key it returns a setup-guidance error so the model can inform the user instead of silently skipping.
+
+### Query tips (surfaced in the tool description)
+
+- English only, simplified keyword form (`'France population'`, not `'how many people live in France'`)
+- Exponent notation `6*10^14`, never `6e14`
+- Single-letter variables (`x`, `y`, `n`)
+- Named physical constants (`'speed of light'`, not `299792458`)
+- For equations with units, solve without units first
+- `RECOMMENDED / AVOID` hints steer the model — simple arithmetic to `run_javascript`, general web queries to `web_search`, subjective/news questions away from Wolfram
 
 ## JavaScript Sandbox
 
@@ -281,6 +303,7 @@ src/FieldCure.Mcp.Essentials/
     ├── CategorySearchDescriptions.cs  # Per-engine tool descriptions
     ├── RunCommandTool.cs       # run_command
     ├── RunJavaScriptTool.cs    # run_javascript (Jint sandbox)
+    ├── WolframAlphaTool.cs     # wolfram_alpha (Full Results API, MathML pass-through)
     ├── GetEnvironmentTool.cs   # get_environment
     ├── ReadFileTool.cs         # read_file
     ├── WriteFileTool.cs        # write_file
