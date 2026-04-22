@@ -1,5 +1,26 @@
 # Release Notes
 
+## v2.2.0 (2026-04-22)
+
+### Added
+
+- **`wolfram_alpha` tool** — queries the Wolfram|Alpha Full Results API v2 and returns mixed MCP content: MathML is passed through verbatim (ChatPanel/WebView2 renders it natively, no client-side conversion), plot/visual pods are embedded as `ImageContent`, and disambiguation assumptions plus a source link are appended.
+- **`reinterpret=true` by default** — the API auto-corrects most failed queries server-side; only real parse failures surface `success=false` with the tool returning `isError: true` and `assumptions > tips > didyoumeans` guidance.
+- **AppID via `ApiKeyResolverRegistry`** — the tool is always registered; the AppID resolves lazily from `WOLFRAM_APPID` on first call, with MCP Elicitation fallback on capable clients and Credential-Manager-style re-elicit cap reuse.
+- **401/403 → invalidate-and-retry once** — a rejected AppID is invalidated and re-resolved (which may re-elicit), bounded by the existing registry cap so the retry cannot loop.
+- **Unit tests** — `WolframAlphaResultConverterTests` covers MathML pass-through, visual pod image fetching (JSON `img.contenttype` MIME), non-visual pods without plaintext, image-fetch failure fallback, disambiguation, error priority ordering, and a real-response fixture.
+
+### Changed
+
+- Server `Description` now lists `Wolfram|Alpha` alongside existing capabilities.
+
+### Behaviour notes
+
+- **Tool is always exposed** (ADR-001) even without `WOLFRAM_APPID`, so the model can surface setup guidance (portal link, `Full Results API` selection) instead of the tool being invisible.
+- **No automatic fallback** — when a query is better served by `run_javascript` or `web_search`, the model is expected to pick the right tool via the `RECOMMENDED / AVOID` guidance in the tool description. No code-level delegation.
+
+---
+
 ## v2.1.1 (2026-04-20)
 
 - Update MCP package metadata to the latest `server.json` format for NuGet and VS Code integration.

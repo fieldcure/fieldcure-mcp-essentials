@@ -8,21 +8,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>2.1.1</Version>
+    <Version>2.2.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
     <Company>Fieldcure Co., Ltd.</Company>
     <Copyright>Copyright (c) 2026 Fieldcure Co., Ltd.</Copyright>
-    <Description>Essential MCP tools — web search (news/images/scholar/patents with SerpApi or Serper), web/document fetching (PDF, DOCX, HWPX, PPTX, XLSX), shell, JavaScript sandbox, file I/O, and persistent memory for any MCP client.</Description>
+    <Description>Essential MCP tools — web search (news/images/scholar/patents with SerpApi or Serper), web/document fetching (PDF, DOCX, HWPX, PPTX, XLSX), Wolfram|Alpha computational knowledge with native MathML, shell, JavaScript sandbox, file I/O, and persistent memory for any MCP client.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fieldcure/fieldcure-mcp-essentials</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;shell;javascript;file-io;memory;sqlite</PackageTags>
+    <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;wolfram-alpha;mathml;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v2.1.1: Update MCP package metadata to the latest server.json format for NuGet and VS Code integration.</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.2.0: Add wolfram_alpha tool — Full Results API v2 with MathML pass-through, plot images, reinterpret=true, AppID via WOLFRAM_APPID env var or MCP Elicitation (401/403 triggers invalidate-and-retry).</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
