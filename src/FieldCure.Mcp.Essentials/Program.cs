@@ -2,11 +2,9 @@ using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
 using FieldCure.Mcp.Essentials.Services;
 using FieldCure.Mcp.Essentials.Services.WolframAlpha;
-using FieldCure.Mcp.Essentials.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using ModelContextProtocol.Server;
 using System.Reflection;
 
 // Default CWD to user home when launched by a host app (e.g., AssistStudio)
@@ -21,8 +19,9 @@ var memoryPath = MemoryStore.ResolvePath(args);
 
 var apiKeyResolvers = new ApiKeyResolverRegistry();
 
-// Resolve search engine: CLI arg (--search-engine) > env var > default (bing)
-var searchEngine = ResolveSearchEngine(args, apiKeyResolvers);
+// Resolve the initial search engine: CLI arg (--search-engine) > env var > default (bing).
+// Runtime switching via set_search_engine is handled by SearchEngineManager.
+var initialEngine = ResolveSearchEngine(args, apiKeyResolvers);
 
 var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 
@@ -35,7 +34,19 @@ builder.Services
     .AddSingleton(new MemoryStore(memoryPath));
 
 builder.Services.AddSingleton(apiKeyResolvers);
-builder.Services.AddSingleton<ISearchEngine>(searchEngine);
+
+// SearchEngineManager owns the active engine; all search tools read
+// manager.Current on each invocation so switches take effect without
+// restarting the stdio server.
+builder.Services.AddSingleton(sp => new SearchEngineManager(
+    initialEngine,
+    sp.GetRequiredService<ApiKeyResolverRegistry>(),
+    sp.GetRequiredService<ILogger<SearchEngineManager>>()));
+
+// Transient ISearchEngine proxy for web_search — always resolves to the
+// currently active engine.
+builder.Services.AddTransient<ISearchEngine>(sp =>
+    sp.GetRequiredService<SearchEngineManager>().Current);
 
 // Wolfram|Alpha — always registered; AppID is resolved lazily via
 // ApiKeyResolverRegistry on first tool invocation.
@@ -43,37 +54,29 @@ var wolframHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 builder.Services.AddSingleton(new WolframAlphaClient(wolframHttp));
 builder.Services.AddSingleton(new ResultConverter(wolframHttp));
 
-var mcpBuilder = builder.Services
+builder.Services
     .AddMcpServer(options =>
     {
         options.ServerInfo = new()
         {
             Name = "fieldcure-mcp-essentials",
             Title = "FieldCure Essentials",
-            Description = searchEngine is ICategorySearchEngine cat
-                ? $"HTTP, web search (+ {string.Join(", ", cat.SupportedCategories.Select(c => c.ToString().ToLowerInvariant()))}), Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory"
-                : "HTTP, web search, Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory",
+            Description = "HTTP, web search (+ news/images/scholar/patents with a category-capable engine), Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory. Use set_search_engine to switch search engines at runtime.",
             Version = GetPublicVersion(),
         };
     })
     .WithStdioServerTransport()
-    .WithToolsFromAssembly();  // 12 static tools (attribute-based)
-
-// v1.1: Register category search tools dynamically based on engine capabilities.
-// Tools and descriptions are determined at startup — no runtime changes needed
-// since stdio MCP servers restart on engine changes.
-if (searchEngine is ICategorySearchEngine categoryEngine)
-{
-    builder.Services.AddSingleton<ICategorySearchEngine>(categoryEngine);
-    RegisterCategoryTools(mcpBuilder, categoryEngine);
-}
+    .WithToolsFromAssembly();  // Discovers all [McpServerToolType] classes,
+                               // including the superset of category tools.
 
 var app = builder.Build();
 await app.RunAsync();
 return 0;
 
 /// <summary>
-/// Resolves the search engine from CLI args, environment variable, or default.
+/// Resolves the initial search engine from CLI args, environment variable,
+/// or default. Runtime switching is handled separately by
+/// <see cref="SearchEngineManager"/>.
 /// </summary>
 static ISearchEngine ResolveSearchEngine(string[] args, ApiKeyResolverRegistry apiKeyResolvers)
 {
@@ -95,7 +98,15 @@ static ISearchEngine ResolveSearchEngine(string[] args, ApiKeyResolverRegistry a
     var apiKey = ResolveArg(args, "--search-api-key", "ESSENTIALS_SEARCH_API_KEY")
                  ?? ReadEngineApiKey(engineName);
 
-    return CreateEngine(engineName, apiKey, apiKeyResolvers);
+    try
+    {
+        return SearchEngineFactory.Create(engineName, apiKey, apiKeyResolvers);
+    }
+    catch (ArgumentException ex)
+    {
+        Console.Error.WriteLine($"[Warning] {ex.Message} — falling back to Bing/DuckDuckGo.");
+        return new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
+    }
 }
 
 /// <summary>
@@ -132,7 +143,7 @@ static ISearchEngine? DetectEngineFromEnv()
         if (!string.IsNullOrEmpty(apiKey))
         {
             Console.Error.WriteLine($"[Info] Auto-detected search engine '{name}' from {envVar}.");
-            return CreateConcreteEngine(name, apiKey);
+            return SearchEngineFactory.CreateConcrete(name, apiKey);
         }
     }
 
@@ -155,108 +166,6 @@ static string? ReadEngineApiKey(string engineName)
     if (envVar is null) return null;
     var value = Environment.GetEnvironmentVariable(envVar);
     return string.IsNullOrEmpty(value) ? null : value;
-}
-
-/// <summary>
-/// Creates a search engine instance by name, with optional API key for paid engines.
-/// Explicit paid engines use lazy elicitation before falling back to Bing/DuckDuckGo.
-/// </summary>
-static ISearchEngine CreateEngine(string name, string? apiKey, ApiKeyResolverRegistry apiKeyResolvers)
-{
-    var fallback = new FallbackSearchEngine(new BingSearchEngine(), new DuckDuckGoSearchEngine());
-
-    return name.ToLowerInvariant() switch
-    {
-        "bing" => new BingSearchEngine(),
-        "duckduckgo" or "ddg" => new DuckDuckGoSearchEngine(),
-        "serper" => apiKey is not null
-            ? CreateConcreteEngine("serper", apiKey)
-            : new LazyPaidSearchEngine("serper", "Serper", "SERPER_API_KEY", apiKeyResolvers, fallback, CreateConcreteEngine),
-        "tavily" => apiKey is not null
-            ? CreateConcreteEngine("tavily", apiKey)
-            : new LazyPaidSearchEngine("tavily", "Tavily", "TAVILY_API_KEY", apiKeyResolvers, fallback, CreateConcreteEngine),
-        "serpapi" => apiKey is not null
-            ? CreateConcreteEngine("serpapi", apiKey)
-            : new LazyPaidSearchEngine("serpapi", "SerpApi", "SERPAPI_API_KEY", apiKeyResolvers, fallback, CreateConcreteEngine),
-        _ => LogAndFallback($"Unknown search engine: '{name}'. Supported: bing, duckduckgo, serper, tavily, serpapi", fallback),
-    };
-}
-
-/// <summary>
-/// Creates a concrete paid search engine once an API key is already available.
-/// </summary>
-/// <param name="name">Internal engine key such as <c>serper</c>.</param>
-/// <param name="apiKey">Resolved API key for the selected engine.</param>
-/// <returns>A concrete paid search engine instance.</returns>
-static ISearchEngine CreateConcreteEngine(string name, string apiKey) => name.ToLowerInvariant() switch
-{
-    "serper" => new SerperSearchEngine(apiKey),
-    "tavily" => new TavilySearchEngine(apiKey),
-    "serpapi" => new SerpApiSearchEngine(apiKey),
-    _ => throw new NotSupportedException($"Paid search engine '{name}' is not supported."),
-};
-
-/// <summary>
-/// Logs a warning to stderr and returns the fallback search engine.
-/// </summary>
-static ISearchEngine LogAndFallback(string message, ISearchEngine fallback)
-{
-    Console.Error.WriteLine($"[Warning] {message} — falling back to Bing/DuckDuckGo.");
-    return fallback;
-}
-
-/// <summary>
-/// Registers category search tools (news, images, scholar, patents) based on engine capabilities.
-/// Each tool gets an engine-specific description via McpServerToolCreateOptions.
-/// </summary>
-static void RegisterCategoryTools(IMcpServerBuilder mcpBuilder, ICategorySearchEngine engine)
-{
-    var cats = engine.SupportedCategories;
-    var name = engine.EngineName;
-    var tools = new List<McpServerTool>();
-
-    // Build a temporary IServiceProvider so the SDK recognizes ICategorySearchEngine
-    // as a DI-injected parameter and excludes it from the tool's JSON schema.
-    var services = new ServiceCollection()
-        .AddSingleton<ICategorySearchEngine>(engine)
-        .BuildServiceProvider();
-
-    /// <summary>
-    /// Builds per-tool registration options with an engine-specific description
-    /// and a temporary service provider that supplies the category engine.
-    /// </summary>
-    /// <param name="toolName">Public MCP tool name.</param>
-    /// <param name="description">Engine-specific tool description.</param>
-    /// <returns>Tool creation options for dynamic registration.</returns>
-    McpServerToolCreateOptions Options(string toolName, string description) => new()
-    {
-        Name = toolName,
-        Description = description,
-        Services = services,
-    };
-
-    if (cats.Contains(SearchCategory.News))
-        tools.Add(McpServerTool.Create(
-            CategorySearchTools.SearchNews,
-            Options("search_news", CategorySearchDescriptions.News(name))));
-
-    if (cats.Contains(SearchCategory.Images))
-        tools.Add(McpServerTool.Create(
-            CategorySearchTools.SearchImages,
-            Options("search_images", CategorySearchDescriptions.Images(name))));
-
-    if (cats.Contains(SearchCategory.Scholar))
-        tools.Add(McpServerTool.Create(
-            CategorySearchTools.SearchScholar,
-            Options("search_scholar", CategorySearchDescriptions.Scholar(name))));
-
-    if (cats.Contains(SearchCategory.Patents))
-        tools.Add(McpServerTool.Create(
-            CategorySearchTools.SearchPatents,
-            Options("search_patents", CategorySearchDescriptions.Patents(name))));
-
-    if (tools.Count > 0)
-        mcpBuilder.WithTools(tools);
 }
 
 /// <summary>

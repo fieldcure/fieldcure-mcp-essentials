@@ -23,6 +23,26 @@ internal sealed class LazyPaidSearchEngine : ISearchEngine, ICategorySearchEngin
     bool _fallbackDeclined;
 
     /// <summary>
+    /// Clears the cached engine resolution so the next access re-evaluates
+    /// API key availability. Called when the host signals that credentials
+    /// may have changed (e.g., after the user updated a paid-engine API key
+    /// in the host UI and triggered an engine reconnect).
+    /// </summary>
+    public void InvalidateCache()
+    {
+        _gate.Wait();
+        try
+        {
+            _resolved = null;
+            _fallbackDeclined = false;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
     /// Initializes a new lazy paid-engine wrapper.
     /// </summary>
     /// <param name="engineName">Internal engine key such as <c>serper</c>.</param>

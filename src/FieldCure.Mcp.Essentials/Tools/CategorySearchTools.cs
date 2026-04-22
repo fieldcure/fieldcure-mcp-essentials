@@ -7,18 +7,23 @@ using ModelContextProtocol.Server;
 namespace FieldCure.Mcp.Essentials.Tools;
 
 /// <summary>
-/// Handler methods for category search MCP tools.
-/// These are NOT auto-discovered (no [McpServerToolType]).
-/// Registered programmatically via McpServerTool.Create() in Program.cs.
+/// MCP tools for category-specific search (news, images, scholar, patents).
+/// All four tools are always registered (superset); the current engine's
+/// <see cref="ICategorySearchEngine.SupportedCategories"/> is checked at
+/// invocation time so switches via <c>set_search_engine</c> take effect
+/// without restarting the server.
 /// </summary>
+[McpServerToolType]
 public static class CategorySearchTools
 {
     /// <summary>
-    /// Searches recent news articles.
+    /// Searches recent news articles via the active category-capable engine.
     /// </summary>
-    public static async Task<string> SearchNews(
+    [McpServerTool(Name = "search_news")]
+    [Description("Search recent news articles with title, URL, snippet, source, and publication date. Requires a category-capable engine (SerpApi, Serper, or Tavily). Returns an error if the active engine does not support news search — use set_search_engine to switch.")]
+    public static Task<string> SearchNews(
         McpServer? server,
-        ICategorySearchEngine engine,
+        SearchEngineManager engineManager,
         [Description("News search query")]
         string query,
         [Description("Time range filter: '1d' (past day), '1w' (past week), '1m' (past month)")]
@@ -27,9 +32,8 @@ public static class CategorySearchTools
         int max_results = 10,
         [Description("Region code for localized results (e.g. 'ko-kr', 'en-us')")]
         string? region = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(server, engine, new CategorySearchRequest
+        CancellationToken cancellationToken = default) =>
+        ExecuteAsync(server, engineManager, new CategorySearchRequest
         {
             Category = SearchCategory.News,
             Query = query,
@@ -37,14 +41,15 @@ public static class CategorySearchTools
             Region = region,
             TimeRange = time_range,
         }, cancellationToken);
-    }
 
     /// <summary>
-    /// Searches images.
+    /// Searches images via the active category-capable engine.
     /// </summary>
-    public static async Task<string> SearchImages(
+    [McpServerTool(Name = "search_images")]
+    [Description("Search images and return URLs, thumbnails, dimensions, and source info. Requires a category-capable engine (SerpApi or Serper). Returns an error if the active engine does not support image search — use set_search_engine to switch.")]
+    public static Task<string> SearchImages(
         McpServer? server,
-        ICategorySearchEngine engine,
+        SearchEngineManager engineManager,
         [Description("Image search query")]
         string query,
         [Description("Filter by image size: 'large', 'medium', 'icon'")]
@@ -55,9 +60,8 @@ public static class CategorySearchTools
         int max_results = 10,
         [Description("Region code for localized results (e.g. 'ko-kr', 'en-us')")]
         string? region = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(server, engine, new CategorySearchRequest
+        CancellationToken cancellationToken = default) =>
+        ExecuteAsync(server, engineManager, new CategorySearchRequest
         {
             Category = SearchCategory.Images,
             Query = query,
@@ -66,14 +70,15 @@ public static class CategorySearchTools
             ImageSize = image_size,
             ImageType = image_type,
         }, cancellationToken);
-    }
 
     /// <summary>
-    /// Searches academic papers.
+    /// Searches academic papers via the active category-capable engine.
     /// </summary>
-    public static async Task<string> SearchScholar(
+    [McpServerTool(Name = "search_scholar")]
+    [Description("Search academic papers and return titles, authors, citation counts, and publication details. Requires a category-capable engine (SerpApi or Serper). Returns an error if the active engine does not support scholar search — use set_search_engine to switch.")]
+    public static Task<string> SearchScholar(
         McpServer? server,
-        ICategorySearchEngine engine,
+        SearchEngineManager engineManager,
         [Description("Academic search query")]
         string query,
         [Description("Filter by author name")]
@@ -84,9 +89,8 @@ public static class CategorySearchTools
         int max_results = 10,
         [Description("Region code for localized results (e.g. 'ko-kr', 'en-us')")]
         string? region = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(server, engine, new CategorySearchRequest
+        CancellationToken cancellationToken = default) =>
+        ExecuteAsync(server, engineManager, new CategorySearchRequest
         {
             Category = SearchCategory.Scholar,
             Query = query,
@@ -95,14 +99,15 @@ public static class CategorySearchTools
             Author = author,
             CitedBy = cited_by,
         }, cancellationToken);
-    }
 
     /// <summary>
-    /// Searches patent documents.
+    /// Searches patent documents via the active category-capable engine.
     /// </summary>
-    public static async Task<string> SearchPatents(
+    [McpServerTool(Name = "search_patents")]
+    [Description("Search patent documents for prior art, filings, and IP information. Requires a category-capable engine (SerpApi or Serper). Returns an error if the active engine does not support patent search — use set_search_engine to switch.")]
+    public static Task<string> SearchPatents(
         McpServer? server,
-        ICategorySearchEngine engine,
+        SearchEngineManager engineManager,
         [Description("Patent search query")]
         string query,
         [Description("Filter by inventor name")]
@@ -115,9 +120,8 @@ public static class CategorySearchTools
         int max_results = 10,
         [Description("Region code for localized results (e.g. 'ko-kr', 'en-us')")]
         string? region = null,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(server, engine, new CategorySearchRequest
+        CancellationToken cancellationToken = default) =>
+        ExecuteAsync(server, engineManager, new CategorySearchRequest
         {
             Category = SearchCategory.Patents,
             Query = query,
@@ -127,30 +131,61 @@ public static class CategorySearchTools
             Assignee = assignee,
             DateRange = date_range,
         }, cancellationToken);
-    }
 
     /// <summary>
-    /// Executes a category search and serializes the result into the shared MCP
-    /// JSON response shape used by all category tools.
+    /// Executes a category search against the active engine, returning the
+    /// shared MCP JSON response shape used by all four category tools. If
+    /// the active engine is not category-capable or does not advertise the
+    /// requested category, a descriptive error is returned instead of
+    /// throwing so the model can recover by switching engines.
     /// </summary>
     /// <param name="server">The active MCP server instance, or <see langword="null"/> for direct calls.</param>
-    /// <param name="engine">The injected category-capable search engine.</param>
+    /// <param name="engineManager">Provides the currently active engine.</param>
     /// <param name="request">The normalized category search request.</param>
     /// <param name="ct">Cancellation token for the search operation.</param>
     /// <returns>A JSON payload containing either results or an error.</returns>
     static async Task<string> ExecuteAsync(
-        McpServer? server, ICategorySearchEngine engine, CategorySearchRequest request, CancellationToken ct)
+        McpServer? server,
+        SearchEngineManager engineManager,
+        CategorySearchRequest request,
+        CancellationToken ct)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(request.Query))
                 return JsonSerializer.Serialize(new { error = "Query must not be empty." }, McpJson.Options);
 
+            var current = engineManager.Current;
+            var categoryKey = request.Category.ToString().ToLowerInvariant();
+
+            if (current is not ICategorySearchEngine categoryEngine)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    error = $"The active search engine does not support category search. " +
+                            $"Use 'set_search_engine' to switch to a category-capable engine (serper, serpapi, or tavily).",
+                    category = categoryKey,
+                }, McpJson.Options);
+            }
+
+            if (!categoryEngine.SupportedCategories.Contains(request.Category))
+            {
+                var supported = string.Join(
+                    ", ",
+                    categoryEngine.SupportedCategories.Select(c => c.ToString().ToLowerInvariant()));
+                return JsonSerializer.Serialize(new
+                {
+                    error = $"Engine '{categoryEngine.EngineName}' does not support '{categoryKey}' search. " +
+                            $"Supported categories: [{supported}]. Use 'set_search_engine' to switch.",
+                    category = categoryKey,
+                }, McpJson.Options);
+            }
+
             var gate = server is null ? null : new McpServerElicitGate(server);
 
-            var result = engine is IMcpAwareCategorySearchEngine mcpAware
+            var result = categoryEngine is IMcpAwareCategorySearchEngine mcpAware
                 ? await mcpAware.SearchAsync(gate, request, ct)
-                : await engine.SearchAsync(request, ct);
+                : await categoryEngine.SearchAsync(request, ct);
 
             return JsonSerializer.Serialize(new
             {
