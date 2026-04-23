@@ -1,5 +1,31 @@
 # Release Notes
 
+## v2.3.0 (2026-04-22)
+
+### Added
+
+- **`set_search_engine` tool** — switches the active search engine (`bing`, `duckduckgo`, `serper`, `tavily`, `serpapi`) at runtime without restarting the stdio server. Paid-engine API keys continue to resolve lazily via `ApiKeyResolverRegistry` (env var → MCP Elicitation) on the next search invocation; the switch itself takes only the engine name.
+- **`SearchEngineManager`** — singleton that owns the active `ISearchEngine` and coordinates switches. Emits `notifications/tools/list_changed` after a successful swap so supporting clients refresh their tool descriptions; emission failures are logged and swallowed so clients that ignore the notification are unaffected.
+- **`LazyPaidSearchEngine.InvalidateCache()`** — discards the cached engine resolution under the existing semaphore so the next access re-evaluates API-key availability (used by `SearchEngineManager` on the outgoing engine to keep any retained reference clean).
+- **`SearchEngineFactory`** — extracts engine construction from `Program.cs` so both the startup resolution path and the runtime switch go through the same factory, with a shared `SupportedNames` list for tool descriptions.
+
+### Changed
+
+- **Category tools are now always registered** — `search_news`, `search_images`, `search_scholar`, and `search_patents` are always exposed (superset) instead of conditionally registered per initial engine. Each handler runtime-guards on `ICategorySearchEngine.SupportedCategories` and returns a descriptive error that points at `set_search_engine` when the active engine cannot service the request.
+- **`CategorySearchTools`** migrated to attribute-based discovery (`[McpServerToolType]`) and consumes `SearchEngineManager` via DI so invocations always see the current engine.
+- **Server `Description`** now mentions runtime engine switching.
+
+### Removed
+
+- **`CategorySearchDescriptions`** — per-engine tool descriptions became meaningless once engines can change at runtime; the replacement descriptions live inline on each `[McpServerTool]` with a hint about `set_search_engine`.
+
+### Behaviour notes
+
+- **Superset-only strategy (not hybrid)** — the design originally proposed a hybrid strategy (exact tools for `list_changed`-capable clients, superset otherwise), but the SDK surface for dynamically adding/removing `McpServerTool` instances is internal, and the per-tool runtime guard is required for the non-`list_changed` path anyway. Four always-on tools add negligible token overhead and keep the code path uniform.
+- **Client notification is best-effort** — `list_changed` is sent after every successful switch but not retried; clients that do not advertise the capability silently ignore it.
+
+---
+
 ## v2.2.0 (2026-04-22)
 
 ### Added
