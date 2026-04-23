@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>2.3.0</Version>
+    <Version>2.4.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;document-parsing;pdf;docx;wolfram-alpha;mathml;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v2.3.0: Runtime search engine switching — new set_search_engine tool swaps the active engine (bing, duckduckgo, serper, tavily, serpapi) without restarting the server. Category tools (search_news/images/scholar/patents) are now always registered with runtime capability guards. Emits notifications/tools/list_changed on switch for supporting clients.</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.4.0: Add get_search_engine read-only tool — returns the currently active engine and its category capabilities without side effects. Lets host UIs reflect live engine state after a runtime set_search_engine switch, and lets models confirm category support before attempting a category search.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>

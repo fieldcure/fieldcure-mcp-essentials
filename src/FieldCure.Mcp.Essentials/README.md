@@ -1,6 +1,6 @@
 # FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 18 essential tools for any MCP client — web search with runtime engine switching, Wolfram|Alpha, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. Category search (news, images, scholar, patents) is always available with per-tool runtime capability guards against the active engine.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 19 essential tools for any MCP client — web search with runtime engine switching (get/set), Wolfram|Alpha, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. Category search (news, images, scholar, patents) is always available with per-tool runtime capability guards against the active engine.
 
 <!-- mcp-name: io.github.fieldcure/essentials -->
 
@@ -22,6 +22,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `forget` | Delete memories by key or keyword search |
 | `list_memories` | Search and list stored memories with FTS5 and pagination |
 | `set_search_engine` | Switch the active search engine (`bing`, `duckduckgo`, `serper`, `tavily`, `serpapi`) at runtime. Paid-engine API keys resolve lazily via env var or MCP Elicitation on the next search. Emits `notifications/tools/list_changed` on success. |
+| `get_search_engine` | Return the currently active engine and its category capabilities. Read-only; useful for host UIs reflecting live engine state or for confirming category support before calling a category search tool. |
 
 ### Category Search (SerpApi / Serper / Tavily)
 

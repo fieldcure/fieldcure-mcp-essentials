@@ -3,11 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 18 essential tools — HTTP requests, web search & fetch, Wolfram|Alpha computational knowledge, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Category search (news, images, scholar, patents) and runtime engine switching are always available; capabilities are guarded at invocation time against the active engine. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 19 essential tools — HTTP requests, web search & fetch, Wolfram|Alpha computational knowledge, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Category search (news, images, scholar, patents) and runtime engine switching (get/set) are always available; capabilities are guarded at invocation time against the active engine. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **18 essential tools** — HTTP, web search & fetch, runtime search-engine switching, Wolfram|Alpha, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + category search (news, images, scholar, patents)
+- **19 essential tools** — HTTP, web search & fetch, runtime search-engine switching (get/set), Wolfram|Alpha, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + category search (news, images, scholar, patents)
 - **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, SerpApi (+ category search tools), and Wolfram|Alpha
 - **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown. PDF text extraction is text-layer only; scanned PDFs without a text layer yield empty text. For OCR-backed indexing use [`fieldcure-mcp-rag`](https://github.com/fieldcure/fieldcure-mcp-rag).
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
@@ -69,6 +69,7 @@ Always registered. Each tool runtime-guards on the active engine's capabilities 
 | Tool | Description |
 |------|-------------|
 | `set_search_engine` | Switch the active engine (`bing`, `duckduckgo`, `serper`, `tavily`, `serpapi`) at runtime. Paid-engine API keys resolve lazily via env var or MCP Elicitation on the next search; the switch itself takes only the engine name. Emits `notifications/tools/list_changed` on success. |
+| `get_search_engine` | Return the currently active engine and its category capabilities. Read-only; use this to reflect live engine state in host UIs or to check category support before calling a category search tool. |
 
 ### `web_search` vs `web_fetch` vs `http_request`
 

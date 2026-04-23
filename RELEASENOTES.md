@@ -1,5 +1,17 @@
 # Release Notes
 
+## v2.4.0 (2026-04-23)
+
+### Added
+
+- **`get_search_engine` tool** — returns the currently active engine name, its supported category set, and a `supports_category_search` boolean. Read-only and side-effect-free. Fills the gap left by v2.3.0's mutation-only `set_search_engine`: host UIs that want to reflect the live engine after a runtime switch had no way to query it short of mutating, and models that wanted to confirm category support before calling `search_news` / `search_images` / `search_scholar` / `search_patents` had to rely on the per-tool runtime guard as a failure-only signal.
+
+### Behaviour notes
+
+- No state change from v2.3.0. Engine resolution order (CLI arg → env var → auto-detect → fallback) is unchanged, and `set_search_engine` remains the only mutator.
+
+---
+
 ## v2.3.0 (2026-04-22)
 
 ### Added
