@@ -40,8 +40,31 @@ public static class GetSearchEngineTool
         return JsonSerializer.Serialize(new
         {
             engine = engineLabel,
+            key = ResolveCanonicalKey(current),
             categories,
             supports_category_search = categories.Length > 0,
         }, McpJson.Options);
     }
+
+    /// <summary>
+    /// Maps an <see cref="ISearchEngine"/> instance to the canonical key accepted
+    /// by <c>set_search_engine</c> (e.g. <c>"bing"</c>, <c>"serper"</c>). Hosts
+    /// use this value to match the active engine to their own UI selection
+    /// without string-normalizing display names.
+    /// </summary>
+    /// <param name="engine">The currently active engine reported by <see cref="SearchEngineManager"/>.</param>
+    /// <returns>A lowercase canonical key, or the lowercase type-name fallback for unknown engines.</returns>
+    static string ResolveCanonicalKey(ISearchEngine engine) => engine switch
+    {
+        BingSearchEngine => "bing",
+        DuckDuckGoSearchEngine => "duckduckgo",
+        SerperSearchEngine => "serper",
+        TavilySearchEngine => "tavily",
+        SerpApiSearchEngine => "serpapi",
+        LazyPaidSearchEngine lazy => lazy.EngineName.ToLowerInvariant(),
+        // FallbackSearchEngine wraps Bing (primary) + DuckDuckGo (secondary);
+        // report the primary so host UIs can render a single stable selection.
+        FallbackSearchEngine => "bing",
+        _ => engine.GetType().Name.Replace("SearchEngine", string.Empty).ToLowerInvariant(),
+    };
 }
