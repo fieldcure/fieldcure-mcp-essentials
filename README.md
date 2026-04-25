@@ -3,15 +3,15 @@
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
 
-Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 19 essential tools — HTTP requests, web search & fetch, Wolfram|Alpha computational knowledge, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Category search (news, images, scholar, patents) and runtime engine switching (get/set) are always available; capabilities are guarded at invocation time against the active engine. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
+Install once, get the basics. A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that provides 20 essential tools — HTTP requests, web search & fetch, URL file downloads, Wolfram|Alpha computational knowledge, shell commands, JavaScript execution, file I/O, environment info, and persistent memory — for any MCP client. Category search (news, images, scholar, patents) and runtime engine switching (get/set) are always available; capabilities are guarded at invocation time against the active engine. Built with C# and the official [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk).
 
 ## Features
 
-- **19 essential tools** — HTTP, web search & fetch, runtime search-engine switching (get/set), Wolfram|Alpha, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + category search (news, images, scholar, patents)
+- **20 essential tools** — HTTP, web search & fetch, URL file downloads, runtime search-engine switching (get/set), Wolfram|Alpha, shell, JavaScript sandbox, environment info, file read/write/search, persistent memory + category search (news, images, scholar, patents)
 - **Zero configuration** — no API keys needed for default Bing search; optional API keys unlock Serper, Tavily, SerpApi (+ category search tools), and Wolfram|Alpha
 - **Document parsing** — `web_fetch` and `read_file` extract text from PDF, DOCX, HWPX, PPTX, XLSX into Markdown. PDF text extraction is text-layer only; scanned PDFs without a text layer yield empty text. For OCR-backed indexing use [`fieldcure-mcp-rag`](https://github.com/fieldcure/fieldcure-mcp-rag).
 - **Sandboxed JavaScript** — Jint engine with strict limits (timeout, statement count, recursion depth)
-- **SSRF protection** — HTTP requests and web fetch block private IP ranges and loopback addresses
+- **SSRF protection** — HTTP requests, web fetch, and file downloads block private IP ranges and loopback addresses
 - **Cross-client** — works with Claude Desktop, VS Code, AssistStudio, and any MCP-compatible client
 - **Stdio transport** — standard MCP subprocess model via JSON-RPC over stdin/stdout
 
@@ -42,6 +42,7 @@ dotnet build
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with custom headers and body | — |
 | `web_search` | Search the web and return snippets (title, URL, description) | — |
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) | — |
+| `download_file` | Download URL content to disk with a configurable download directory, 100 MB limit, and atomic save | Yes |
 | `run_command` | Execute shell commands with working directory and environment variables | Yes |
 | `run_javascript` | Sandboxed JavaScript execution (Jint) for math, data processing, JSON, regex | — |
 | `wolfram_alpha` | Wolfram&#124;Alpha Full Results API — symbolic math, plots, unit conversions, constants; MathML passes through for native rendering | — |
@@ -71,14 +72,14 @@ Always registered. Each tool runtime-guards on the active engine's capabilities 
 | `set_search_engine` | Switch the active engine (`bing`, `duckduckgo`, `serper`, `tavily`, `serpapi`) at runtime. Paid-engine API keys resolve lazily via env var or MCP Elicitation on the next search; the switch itself takes only the engine name. Emits `notifications/tools/list_changed` on success. |
 | `get_search_engine` | Return the currently active engine and its category capabilities. Read-only; use this to reflect live engine state in host UIs or to check category support before calling a category search tool. |
 
-### `web_search` vs `web_fetch` vs `http_request`
+### `web_search` vs `web_fetch` vs `download_file` vs `http_request`
 
-| | `http_request` | `web_search` | `web_fetch` |
-|---|---|---|---|
-| Purpose | API calls, raw HTTP | Web search | Read web pages |
-| Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Markdown (body only) |
-| Conversion | None | None | SmartReader HTML → Markdown |
-| Length limit | `max_response_chars` (default: unlimited, up to 1MB) | `max_results` (max 10) | `max_length` (max 20000) |
+| | `http_request` | `web_search` | `web_fetch` | `download_file` |
+|---|---|---|---|---|
+| Purpose | API calls, raw HTTP | Web search | Read web pages | Save original files |
+| Response | Raw (JSON, HTML, etc.) | `{title, url, snippet}[]` | Markdown (body only) | JSON metadata with saved path |
+| Conversion | None | None | SmartReader HTML → Markdown | None |
+| Length limit | `max_response_chars` (default: unlimited, up to 1MB) | `max_results` (max 10) | `max_length` (max 20000) | 100 MB |
 
 ## Document Parsing
 
@@ -93,6 +94,26 @@ Always registered. Each tool runtime-guards on the active engine's capabilities 
 | Excel | `.xlsx` | Content-Type / URL extension |
 
 Output includes headings, tables, math expressions (`[math: LaTeX]`), and slide/page separators.
+
+## File Downloads
+
+`download_file` saves the original bytes from an HTTP(S) URL. If `save_path` is omitted, the tool infers a filename from `Content-Disposition`, the URL path, or a generated fallback name. Relative `save_path` values resolve under the configured `download_directory`; absolute paths are used as-is except for protected system directories.
+
+The default download directory is `~/Downloads/mcp` and is created automatically on first use. Downloads are written to a temporary file in the destination directory and then committed with an atomic move/replace, so failed or cancelled downloads do not leave a partial final file.
+
+```json
+{
+  "url": "https://example.com/report.pdf"
+}
+```
+
+```json
+{
+  "url": "https://example.com/report.pdf",
+  "save_path": "reports/report.pdf",
+  "overwrite": false
+}
+```
 
 ## Web Search
 
@@ -219,6 +240,28 @@ ESSENTIALS_MEMORY_PATH=/path/to/memory.db fieldcure-mcp-essentials
 
 ## Configuration
 
+### Essentials settings
+
+The default settings file is:
+
+- Windows: `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/settings.json`
+- macOS/Linux: the platform local app-data folder plus `FieldCure/Mcp.Essentials/settings.json`
+
+```json
+{
+  "download_directory": "~/Downloads/mcp"
+}
+```
+
+Download directory precedence is:
+
+1. CLI: `--download-directory <path>`
+2. Environment: `ESSENTIALS_DOWNLOAD_DIRECTORY`
+3. Settings file: `download_directory`
+4. Default: `~/Downloads/mcp`
+
+Use `--settings-path <path>` or `ESSENTIALS_SETTINGS_PATH` to point at a different settings file.
+
 ### Claude Desktop
 
 Add to `claude_desktop_config.json`:
@@ -281,6 +324,8 @@ Add to `.vscode/mcp.json`:
 | Data | Location |
 |------|----------|
 | Memory database | `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/memory.db` |
+| Settings file | `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/settings.json` |
+| Default downloads | `~/Downloads/mcp` |
 | Search API keys | Environment variables (`SERPER_API_KEY`, `TAVILY_API_KEY`, `SERPAPI_API_KEY`) |
 
 ## Project Structure
@@ -288,6 +333,8 @@ Add to `.vscode/mcp.json`:
 ```
 src/FieldCure.Mcp.Essentials/
 ├── Program.cs                  # MCP server entry point (stdio)
+├── Configuration/
+│   └── EssentialsSettings.cs   # Server settings and download directory resolution
 ├── Http/
 │   └── SsrfGuard.cs            # SSRF protection (shared by http_request & web_fetch)
 ├── Memory/
@@ -306,8 +353,8 @@ src/FieldCure.Mcp.Essentials/
     ├── HttpRequestTool.cs      # http_request
     ├── WebSearchTool.cs        # web_search
     ├── WebFetchTool.cs         # web_fetch (SmartReader)
+    ├── DownloadFileTool.cs     # download_file
     ├── CategorySearchTools.cs  # search_news / search_images / search_scholar / search_patents
-    ├── CategorySearchDescriptions.cs  # Per-engine tool descriptions
     ├── RunCommandTool.cs       # run_command
     ├── RunJavaScriptTool.cs    # run_javascript (Jint sandbox)
     ├── WolframAlphaTool.cs     # wolfram_alpha (Full Results API, MathML pass-through)

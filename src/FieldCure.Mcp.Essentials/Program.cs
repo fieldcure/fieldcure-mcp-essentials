@@ -1,3 +1,4 @@
+﻿using FieldCure.Mcp.Essentials.Configuration;
 using FieldCure.Mcp.Essentials.Memory;
 using FieldCure.Mcp.Essentials.Search;
 using FieldCure.Mcp.Essentials.Services;
@@ -16,6 +17,7 @@ if (Directory.Exists(cwd))
 
 // Resolve memory file path: CLI arg (--memory-path) > env var > default
 var memoryPath = MemoryStore.ResolvePath(args);
+var settings = EssentialsSettings.Load(args);
 
 var apiKeyResolvers = new ApiKeyResolverRegistry();
 
@@ -23,7 +25,7 @@ var apiKeyResolvers = new ApiKeyResolverRegistry();
 // Runtime switching via set_search_engine is handled by SearchEngineManager.
 var initialEngine = ResolveSearchEngine(args, apiKeyResolvers);
 
-var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+var builder = Host.CreateApplicationBuilder([]);
 
 builder.Logging.AddConsole(options =>
 {
@@ -33,6 +35,7 @@ builder.Logging.AddConsole(options =>
 builder.Services
     .AddSingleton(new MemoryStore(memoryPath));
 
+builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton(apiKeyResolvers);
 
 // SearchEngineManager owns the active engine; all search tools read
@@ -61,7 +64,7 @@ builder.Services
         {
             Name = "fieldcure-mcp-essentials",
             Title = "FieldCure Essentials",
-            Description = "HTTP, web search (+ news/images/scholar/patents with a category-capable engine), Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory. Use set_search_engine to switch search engines at runtime.",
+            Description = "HTTP, web search (+ news/images/scholar/patents with a category-capable engine), URL file downloads, Wolfram|Alpha, shell, JavaScript, file I/O, persistent memory. Use set_search_engine to switch search engines at runtime.",
             Version = GetPublicVersion(),
         };
     })

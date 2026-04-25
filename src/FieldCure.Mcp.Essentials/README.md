@@ -1,6 +1,6 @@
-# FieldCure.Mcp.Essentials
+﻿# FieldCure.Mcp.Essentials
 
-Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 19 essential tools for any MCP client — web search with runtime engine switching (get/set), Wolfram|Alpha, web/document fetching, shell, JavaScript sandbox, file I/O, and persistent memory. Category search (news, images, scholar, patents) is always available with per-tool runtime capability guards against the active engine.
+Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 20 essential tools for any MCP client — web search with runtime engine switching (get/set), Wolfram|Alpha, web/document fetching, URL file downloads, shell, JavaScript sandbox, file I/O, and persistent memory. Category search (news, images, scholar, patents) is always available with per-tool runtime capability guards against the active engine.
 
 <!-- mcp-name: io.github.fieldcure/essentials -->
 
@@ -11,6 +11,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `http_request` | Full HTTP client (GET/POST/PUT/DELETE/PATCH/HEAD) with SSRF protection and `max_response_chars` for response size control |
 | `web_search` | Search the web and return snippets (title, URL, description) |
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) |
+| `download_file` | Download URL content to disk with a configurable download directory, 100 MB limit, and atomic save |
 | `run_command` | Shell command execution with timeout, working directory, and env vars |
 | `run_javascript` | Sandboxed JavaScript (Jint) — math, JSON, regex, data processing |
 | `wolfram_alpha` | Wolfram&#124;Alpha computational knowledge — symbolic math, plots, unit conversions, constants. MathML passes through for native rendering |
@@ -48,6 +49,22 @@ Always registered. Each tool runtime-guards on the active engine's capabilities 
 | Excel | `.xlsx` | Content-Type / URL extension |
 
 Output includes headings, tables, math expressions (`[math: LaTeX]`), and slide/page separators.
+
+## File Downloads
+
+`download_file` saves the original bytes from an HTTP(S) URL. If `save_path` is omitted, the tool infers a filename from `Content-Disposition`, the URL path, or a generated fallback name. Relative `save_path` values resolve under the configured `download_directory`; absolute paths are used as-is except for protected system directories.
+
+The default download directory is `~/Downloads/mcp` and is created automatically on first use. Downloads are written to a temporary file in the destination directory and then committed with an atomic move/replace, so failed or cancelled downloads do not leave a partial final file.
+
+Configure it in `%LOCALAPPDATA%/FieldCure/Mcp.Essentials/settings.json`:
+
+```json
+{
+  "download_directory": "~/Downloads/mcp"
+}
+```
+
+Override with `--download-directory <path>` or `ESSENTIALS_DOWNLOAD_DIRECTORY`.
 
 ## Web Search
 
