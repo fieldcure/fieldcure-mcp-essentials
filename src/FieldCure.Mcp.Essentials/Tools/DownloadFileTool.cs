@@ -3,6 +3,7 @@ using FieldCure.Mcp.Essentials.Http;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -23,7 +24,10 @@ public static class DownloadFileTool
     /// Shared HTTP client used by the MCP entry point. Tests call
     /// <see cref="DownloadFileCore"/> with their own client.
     /// </summary>
-    static readonly HttpClient SharedClient = new()
+    static readonly HttpClient SharedClient = new(new HttpClientHandler
+    {
+        AutomaticDecompression = DecompressionMethods.All,
+    })
     {
         Timeout = TimeSpan.FromMinutes(5),
         DefaultRequestHeaders =
@@ -123,7 +127,7 @@ public static class DownloadFileTool
     /// <param name="overwrite">Whether an existing destination file may be replaced.</param>
     /// <param name="cancellationToken">Cancellation token supplied by the MCP host.</param>
     /// <returns>A JSON string describing the saved file or an error.</returns>
-    [McpServerTool(Name = "download_file", Destructive = true)]
+    [McpServerTool(Name = "download_file", Title = "Download file", Destructive = true)]
     [Description("""
         Downloads a file from a URL and saves it to a local path.
 
@@ -410,8 +414,11 @@ public static class DownloadFileTool
     /// <param name="extension">Optional extension including the leading dot.</param>
     /// <returns>A unique fallback filename.</returns>
     static string BuildFallbackFileName(string extension)
-        => $"download-{DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}-{Guid.NewGuid():N}"[..34]
-           + extension;
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+        var shortId = Guid.NewGuid().ToString("N")[..9];
+        return $"download-{timestamp}-{shortId}{extension}";
+    }
 
     /// <summary>
     /// Removes directory components and replaces invalid filename characters.
@@ -537,15 +544,7 @@ public static class DownloadFileTool
     /// <param name="fullPath">Final destination path.</param>
     /// <param name="overwrite">Whether an existing destination file may be replaced.</param>
     static void CommitDownload(string tempPath, string fullPath, bool overwrite)
-    {
-        if (overwrite && File.Exists(fullPath))
-        {
-            File.Replace(tempPath, fullPath, destinationBackupFileName: null);
-            return;
-        }
-
-        File.Move(tempPath, fullPath, overwrite);
-    }
+        => File.Move(tempPath, fullPath, overwrite);
 
     /// <summary>
     /// Deletes a temporary file on a best-effort basis.

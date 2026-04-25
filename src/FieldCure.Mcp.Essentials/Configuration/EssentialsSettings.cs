@@ -110,8 +110,17 @@ public sealed class EssentialsSettings
         if (!File.Exists(settingsPath))
             return null;
 
-        var json = File.ReadAllText(settingsPath);
-        return JsonSerializer.Deserialize<EssentialsSettings>(json, JsonOptions);
+        try
+        {
+            var json = File.ReadAllText(settingsPath);
+            return JsonSerializer.Deserialize<EssentialsSettings>(json, JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            // A malformed or unreadable settings file must not prevent server startup.
+            Console.Error.WriteLine($"[essentials] Failed to load settings from {settingsPath}: {ex.Message}. Using defaults.");
+            return null;
+        }
     }
 
     /// <summary>
