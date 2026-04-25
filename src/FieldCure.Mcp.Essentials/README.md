@@ -1,4 +1,4 @@
-﻿# FieldCure.Mcp.Essentials
+# FieldCure.Mcp.Essentials
 
 Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server with 20 essential tools for any MCP client — web search with runtime engine switching (get/set), Wolfram|Alpha, web/document fetching, URL file downloads, shell, JavaScript sandbox, file I/O, and persistent memory. Category search (news, images, scholar, patents) is always available with per-tool runtime capability guards against the active engine.
 

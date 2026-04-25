@@ -1,4 +1,19 @@
-# Release Notes
+﻿# Release Notes
+
+## v2.5.0 (2026-04-25)
+
+### Added
+
+- **`download_file` tool** — downloads HTTP(S) content to disk while preserving the original bytes. The tool uses the existing SSRF guard, enforces a 100 MB maximum size, and returns saved path, byte count, and content type metadata.
+- **`download_directory` setting** — relative `save_path` values resolve under the configured download directory. Defaults to `~/Downloads/mcp`, auto-created on first use. Override via settings JSON, `ESSENTIALS_DOWNLOAD_DIRECTORY`, or `--download-directory`.
+
+### Behaviour notes
+
+- Downloads are committed atomically by writing to a temporary file in the destination directory before moving/replacing the final path.
+- If `save_path` is omitted, the tool infers a filename from `Content-Disposition`, the URL path, or a generated fallback name.
+- Absolute `save_path` values are honored directly except for protected system directories.
+
+---
 
 ## v2.4.0 (2026-04-23)
 

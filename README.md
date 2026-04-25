@@ -1,4 +1,4 @@
-﻿# FieldCure MCP Essentials
+# FieldCure MCP Essentials
 
 [![NuGet](https://img.shields.io/nuget/v/FieldCure.Mcp.Essentials)](https://www.nuget.org/packages/FieldCure.Mcp.Essentials)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/fieldcure/fieldcure-mcp-essentials/blob/main/LICENSE)
