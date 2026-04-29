@@ -462,6 +462,31 @@ public class RunCommandToolTests
     }
 
     [TestMethod]
+    public async Task PwshPreservesKoreanOutput()
+    {
+        var json = await RunCommandTool.RunCommand("Write-Output '한글 테스트'", shell: "pwsh");
+        if (TryReadUnavailable(json, out var skip)) { Assert.Inconclusive(skip); return; }
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.AreEqual(0, doc.RootElement.GetProperty("exit_code").GetInt32());
+        StringAssert.Contains(doc.RootElement.GetProperty("stdout").GetString()!, "한글 테스트");
+    }
+
+    [TestMethod]
+    public async Task WindowsPowerShellPreservesKoreanOutput_OnWindows()
+    {
+        if (!OperatingSystem.IsWindows())
+            Assert.Inconclusive("Windows PowerShell is Windows-only.");
+
+        var json = await RunCommandTool.RunCommand("Write-Output '한글 테스트'", shell: "powershell");
+        if (TryReadUnavailable(json, out var skip)) { Assert.Inconclusive(skip); return; }
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.AreEqual(0, doc.RootElement.GetProperty("exit_code").GetInt32());
+        StringAssert.Contains(doc.RootElement.GetProperty("stdout").GetString()!, "한글 테스트");
+    }
+
+    [TestMethod]
     public async Task WindowsPowerShellFailsFast_OnNonWindows()
     {
         if (OperatingSystem.IsWindows())

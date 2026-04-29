@@ -365,13 +365,22 @@ public static class RunCommandTool
     }
 
     /// <summary>
+    /// Forces UTF-8 stdout/pipe encoding so non-ASCII output (Korean, emoji, etc.) round-trips
+    /// through the parent's UTF-8 StandardOutputEncoding. Windows PowerShell 5.1 defaults to the
+    /// system OEM codepage (CP949 on Korean Windows), which would otherwise produce mojibake.
+    /// pwsh 7+ already defaults to UTF-8; the reassignment is idempotent there.
+    /// </summary>
+    const string PowerShellEncodingPrelude =
+        "$OutputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;";
+
+    /// <summary>
     /// Builds PowerShell arguments using <c>-EncodedCommand</c> to avoid shell quoting hazards.
     /// </summary>
     /// <param name="command">The command text to encode as UTF-16LE Base64.</param>
     /// <returns>The PowerShell argument list.</returns>
     static string[] PowerShellArguments(string command)
     {
-        var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(command));
+        var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(PowerShellEncodingPrelude + command));
         return ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded];
     }
 
