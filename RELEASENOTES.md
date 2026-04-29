@@ -1,5 +1,27 @@
 ﻿# Release Notes
 
+## v2.6.0 (2026-04-29)
+
+### Added
+
+- **`run_command` shell selection** — adds `shell` with `auto` (default), `pwsh`, `powershell`, `cmd`, `bash`, and `sh`. `auto` preserves existing behavior (`cmd.exe` on Windows, `/bin/sh` on Unix); explicit shells fail fast when unavailable. Responses now include `shell_used`.
+- **`run_command` observable output truncation** — adds `max_output_chars` (default 100,000 chars per stream) plus `stdout_truncated` and `stderr_truncated`. Truncated streams include an inline marker with the omitted character count.
+
+### Fixed
+
+- **cmd.exe embedded quotes** — `auto`-on-Windows and `shell: "cmd"` now pass commands via `Arguments` (raw) instead of `ArgumentList`. cmd.exe does not parse argv with CommandLineToArgvW conventions, so the previous `ArgumentList` path leaked backslashes into commands containing embedded quotes (e.g. `git log --grep="fix"`).
+- **Unix `/bin/sh` quote escaping** — `auto`-on-Unix now passes the command verbatim via execve-style `ArgumentList`, removing the v1.x `command.Replace("\"", "\\\"")` corruption that broke commands with embedded quotes.
+- **Windows PowerShell non-ASCII output** — PowerShell shells now force `[Console]::OutputEncoding` to UTF-8 inside the encoded payload, eliminating Korean/CJK/emoji mojibake on Windows PowerShell 5.1 (which defaults to the system OEM codepage). pwsh 7+ already defaults to UTF-8; the prelude is idempotent there.
+
+### Behaviour notes
+
+- Output readers continue draining stdout/stderr after the visible capture limit is reached, preventing verbose commands from blocking on a full pipe and timing out unnecessarily.
+- PowerShell commands should prefer `shell: "pwsh"` when PowerShell Core is installed, or `shell: "powershell"` on Windows hosts that only have Windows PowerShell.
+- The shell-availability probe now caches successes only and uses a 5-second timeout, so a transient cold-start miss (AV scan, slow disk) does not poison the rest of the process lifetime.
+- CI matrix expanded to `windows-latest`, `ubuntu-latest`, and `macos-latest` so non-Windows shell paths (`/bin/sh`, `/bin/bash`, fail-fast guards, pre-installed `pwsh`) are exercised on every push.
+
+---
+
 ## v2.5.0 (2026-04-25)
 
 ### Added

@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.fieldcure/essentials",
   "description": "Essential MCP tools for HTTP, web search, URL file downloads, Wolfram|Alpha, shell, JavaScript, file I/O, and memory.",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "repository": {
     "url": "https://github.com/fieldcure/fieldcure-mcp-essentials",
     "source": "github"
@@ -12,7 +12,7 @@
       "registryType": "nuget",
       "registryBaseUrl": "https://api.nuget.org/v3/index.json",
       "identifier": "FieldCure.Mcp.Essentials",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "runtimeHint": "dnx",
       "transport": {
         "type": "stdio"

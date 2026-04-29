@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <Version>2.5.0</Version>
+    <Version>2.6.0</Version>
     <PackageId>FieldCure.Mcp.Essentials</PackageId>
 
     <Authors>Jong Hyun Kim</Authors>
@@ -22,7 +22,7 @@
     <PackageTags>mcp;mcp-server;ai;dotnet;web-search;web-fetch;download;document-parsing;pdf;docx;wolfram-alpha;mathml;shell;javascript;file-io;memory;sqlite</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Logo.png</PackageIcon>
-    <PackageReleaseNotes>v2.5.0: Add download_file for saving URL content to disk with SSRF protection, a configurable download_directory defaulting to ~/Downloads/mcp, 100 MB size limits, and atomic temp-file commits.</PackageReleaseNotes>
+    <PackageReleaseNotes>v2.6.0: Add run_command shell selection (auto, pwsh, powershell, cmd, bash, sh) with shell_used reporting and max_output_chars / stdout_truncated / stderr_truncated flags. Fix cmd.exe embedded-quote escaping, Unix /bin/sh quote corruption, and Windows PowerShell non-ASCII (Korean/CJK) output mojibake.</PackageReleaseNotes>
 
     <PackageType>McpServer</PackageType>
     <PackAsTool>true</PackAsTool>
