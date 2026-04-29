@@ -12,7 +12,7 @@ Install once, get the basics. An [MCP](https://modelcontextprotocol.io) server w
 | `web_search` | Search the web and return snippets (title, URL, description) |
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) |
 | `download_file` | Download URL content to disk with a configurable download directory, 100 MB limit, and atomic save |
-| `run_command` | Shell command execution with timeout, working directory, and env vars |
+| `run_command` | Shell command execution with timeout, working directory, env vars, explicit shell selection, and truncation flags |
 | `run_javascript` | Sandboxed JavaScript (Jint) — math, JSON, regex, data processing |
 | `wolfram_alpha` | Wolfram&#124;Alpha computational knowledge — symbolic math, plots, unit conversions, constants. MathML passes through for native rendering |
 | `get_environment` | System info — time, timezone, OS, hostname, username |
@@ -112,6 +112,10 @@ Set `WOLFRAM_APPID` to the AppID obtained at [developer.wolframalpha.com](https:
 > ⚠️ Use `developer.wolframalpha.com`, not `developer.wolfram.com` — the latter is a separate paid portal.
 
 The tool is always registered regardless of AppID status; without a key it returns a setup-guidance error so the model can inform the user.
+
+## Run Command
+
+`run_command` defaults to `cmd.exe` on Windows and `/bin/sh` on Unix for backward compatibility. Pass `shell` to opt into `pwsh`, `powershell`, `cmd`, `bash`, or `sh`. Responses include `shell_used`, `stdout_truncated`, and `stderr_truncated`; `max_output_chars` caps stdout and stderr independently.
 
 ## Memory
 

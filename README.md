@@ -43,7 +43,7 @@ dotnet build
 | `web_search` | Search the web and return snippets (title, URL, description) | — |
 | `web_fetch` | Fetch a URL and extract content as Markdown — HTML pages and documents (PDF, DOCX, HWPX, PPTX, XLSX) | — |
 | `download_file` | Download URL content to disk with a configurable download directory, 100 MB limit, and atomic save | Yes |
-| `run_command` | Execute shell commands with working directory and environment variables | Yes |
+| `run_command` | Execute shell commands with working directory, environment variables, shell selection, and output truncation flags | Yes |
 | `run_javascript` | Sandboxed JavaScript execution (Jint) for math, data processing, JSON, regex | — |
 | `wolfram_alpha` | Wolfram&#124;Alpha Full Results API — symbolic math, plots, unit conversions, constants; MathML passes through for native rendering | — |
 | `get_environment` | System info — local time, timezone, OS, hostname, username, .NET version | — |
@@ -225,6 +225,21 @@ Variables can be injected into the script scope for data pipeline use:
      variables: {"data": {"items": [...]}}
    )
 ```
+
+## Run Command
+
+`run_command` defaults to the backward-compatible shell for the host: `cmd.exe` on Windows and `/bin/sh` on Unix. Use `shell` when a command requires specific syntax:
+
+| Shell | Notes |
+|-------|-------|
+| `auto` | Default; `cmd.exe` on Windows, `/bin/sh` on Unix |
+| `pwsh` | PowerShell Core; recommended for PowerShell-native commands when installed |
+| `powershell` | Windows PowerShell fallback for Windows hosts without `pwsh` |
+| `cmd` | Explicit Windows `cmd.exe` |
+| `bash` | Explicit Bash when available |
+| `sh` | Explicit POSIX shell when available |
+
+Verbose output is capped per stream with `max_output_chars` (default 100,000). Responses include `shell_used`, `stdout_truncated`, and `stderr_truncated`; truncated streams include an inline marker with the omitted character count.
 
 ## Memory
 
