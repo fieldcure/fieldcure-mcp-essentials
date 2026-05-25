@@ -1,5 +1,15 @@
 ﻿# Release Notes
 
+## v2.6.1 (2026-05-25)
+
+### Internal
+
+- **`.mcp/server.json` declares 9 environment variables** for MCP Server Registry discovery: `ESSENTIALS_SEARCH_ENGINE` (choices: `bing` / `duckduckgo` / `serper` / `tavily` / `serpapi`, default `bing`), `ESSENTIALS_SEARCH_API_KEY`, `SERPER_API_KEY`, `SERPAPI_API_KEY`, `TAVILY_API_KEY`, `WOLFRAM_APPID`, `ESSENTIALS_MEMORY_PATH`, `ESSENTIALS_DOWNLOAD_DIRECTORY`, `ESSENTIALS_SETTINGS_PATH`. All secrets are marked `isSecret: true` and all are `isRequired: false` (Essentials' explicit-engine mode soft-fails when an API key is missing per ADR-001 §Resolution chain). Pure descriptor change — runtime behaviour, search-engine selection, and ADR-001 credential resolution chain (CLI → env → Elicit → fallback-consent Elicit → soft fail) are unaffected.
+- **Pack-time `VerifyServerJsonVersion` MSBuild target** catches drift between csproj `<Version>` and the two version fields in `.mcp/server.json` (top-level + `packages[0].version`). Fails pack with a descriptive error if drift is detected so a stale nupkg cannot ship.
+- **`publish-mcp-registry.yml` GitHub Actions workflow** (manual `workflow_dispatch`) drives the MCP Server Registry update via GitHub OIDC. Manual trigger is the safety gate — mcp-publisher has no client-side dry-run mode. Run AFTER NuGet indexing because the registry validates the published nupkg README's `mcp-name` line.
+
+---
+
 ## v2.6.0 (2026-04-29)
 
 ### Added
