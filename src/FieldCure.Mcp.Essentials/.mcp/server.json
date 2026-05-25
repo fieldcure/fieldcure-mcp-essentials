@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.fieldcure/essentials",
-  "description": "Essential MCP tools for HTTP, web search, URL file downloads, Wolfram|Alpha, shell, JavaScript, file I/O, and memory.",
+  "description": "Essential MCP server: HTTP, web search, downloads, Wolfram|Alpha, shell, JS, file I/O, memory.",
   "version": "2.6.1",
   "repository": {
     "url": "https://github.com/fieldcure/fieldcure-mcp-essentials",
